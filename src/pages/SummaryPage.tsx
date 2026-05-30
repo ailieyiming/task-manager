@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useCallback } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { useTasksStore } from '../store/tasks'
 import { useTargetsStore } from '../store/targets'
 import { localToday, isPast, daysUntil } from '../lib/date'
@@ -7,7 +8,14 @@ import { isTaskDueToday, isCompleted } from '../lib/recurrence'
 export function SummaryPage() {
   const { tasks, overrides, hasHydrated } = useTasksStore()
   const { targets } = useTargetsStore()
-  const today = localToday()
+  const [today, setToday] = useState(() => localToday())
+  const [spinning, setSpinning] = useState(false)
+
+  const refresh = useCallback(() => {
+    setSpinning(true)
+    setToday(localToday())
+    setTimeout(() => setSpinning(false), 600)
+  }, [])
 
   const todaysTasks = useMemo(() =>
     tasks.filter(t => isTaskDueToday(t, overrides, today)),
@@ -48,8 +56,19 @@ export function SummaryPage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 z-10">
-        <p className="text-[13px] text-stone-400">{displayDate}</p>
-        <p className="text-[15px] font-semibold text-stone-900">Daily Summary</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[13px] text-stone-400">{displayDate}</p>
+            <p className="text-[15px] font-semibold text-stone-900">Daily Summary</p>
+          </div>
+          <button
+            onClick={refresh}
+            className="w-9 h-9 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+            title="Refresh date"
+          >
+            <RefreshCw size={17} className={spinning ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
