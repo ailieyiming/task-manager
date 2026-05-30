@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: #fafaf9;
+  color: #1c1917;
+  font-family: -apple-system, system-ui, sans-serif;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Bottom sheet animation */
+.sheet-overlay {
+  animation: fadeIn 0.2s ease;
+}
+.sheet-panel {
+  animation: slideUp 0.25s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Native date input on iOS */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* iOS safe area for tab bar */
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 8px);
+}
