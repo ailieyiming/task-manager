@@ -54,4 +54,16 @@ export function getTasksDueToday(tasks: Task[], overrides: TaskOverride[], today
   return tasks.filter(t => isTaskDueToday(t, overrides, today))
 }
 
+// Returns false if a one-time completed task is older than 9 days (should be hidden)
+export function isVisible(task: Task, today: string): boolean {
+  if (task.repeat) return true           // recurring tasks always visible
+  if (task.completedDates.length === 0) return true  // not completed
+  const latest = task.completedDates.slice().sort().at(-1)!
+  const [cy, cm, cd] = latest.split('-').map(Number)
+  const [ty, tm, td] = today.split('-').map(Number)
+  const completedMs = new Date(cy, cm - 1, cd).getTime()
+  const todayMs = new Date(ty, tm - 1, td).getTime()
+  return (todayMs - completedMs) / 86_400_000 <= 9
+}
+
 export { addDays, addWeeks, addMonths }

@@ -15,6 +15,7 @@ interface TasksState {
   addTask: (task: Omit<Task, 'id' | 'completedDates'>) => void
   updateTask: (id: string, changes: Partial<Omit<Task, 'id'>>) => void
   deleteTask: (id: string) => void
+  purgeOldCompleted: () => void   // removes one-time tasks completed > 9 days ago
   markComplete: (taskId: string, date?: string) => void
   markIncomplete: (taskId: string, date?: string) => void
   editOccurrence: (taskId: string, date: string, changes: Partial<TaskOverride>) => void
@@ -64,6 +65,31 @@ export const useTasksStore = create<TasksState>()(
           orderedTaskIds: s.orderedTaskIds.filter(oid => oid !== id),
           overrides: s.overrides.filter(o => o.taskId !== id),
         }))
+      },
+
+      purgeOldCompleted: () => {
+        // Hard-delete one-time tasks whose most recent completion is > 9 days old.
+        // Recurring tasks are never purged this way — they keep recurring.
+        const today = localToday()
+        const [ty, tm, td] = today.split('-').map(Number)
+        const todayMs = new Date(ty, tm - 1, td).getTime()
+        set(s => {
+          const keep = s.tasks.filter(t => {
+            if (t.repeat) return true           // recurring: never auto-purge
+            if (t.completedDates.length === 0) return true  // not yet completed
+            const latest = t.completedDates.slice().sort().at(-1)!
+            const [cy, cm, cd] = latest.split('-').map(Number)
+            const completedMs = new Date(cy, cm - 1, cd).getTime()
+            const daysSince = (todayMs - completedMs) / 86_400_000
+            return daysSince <= 9
+          })
+          const keepIds = new Set(keep.map(t => t.id))
+          return {
+            tasks: keep,
+            orderedTaskIds: s.orderedTaskIds.filter(id => keepIds.has(id)),
+            overrides: s.overrides.filter(o => keepIds.has(o.taskId)),
+          }
+        })
       },
 
       markComplete: (taskId, date) => {
@@ -116,6 +142,7 @@ export const useTasksStore = create<TasksState>()(
       name: 'task-manager-tasks',
       storage: createJSONStorage(() => idbStorage),
       onRehydrateStorage: () => (state) => {
+        state?.purgeOldCompleted()
         state?.setHydrated()
       },
     }

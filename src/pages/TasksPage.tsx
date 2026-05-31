@@ -12,7 +12,7 @@ import {
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { useTasksStore } from '../store/tasks'
 import { localToday } from '../lib/date'
-import { isTaskDueToday, isCompleted } from '../lib/recurrence'
+import { isTaskDueToday, isCompleted, isVisible } from '../lib/recurrence'
 import { TaskCard } from '../components/tasks/TaskCard'
 import { TaskForm } from '../components/tasks/TaskForm'
 import type { Task } from '../store/types'
@@ -38,9 +38,9 @@ export function TasksPage() {
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
   )
 
-  // Today view
+  // Today view — exclude tasks that are completed and past 9-day window
   const todaysTasks = useMemo(() => {
-    const due = tasks.filter(t => isTaskDueToday(t, overrides, today))
+    const due = tasks.filter(t => isTaskDueToday(t, overrides, today) && isVisible(t, today))
     return due.sort((a, b) => {
       const dateCompare = a.baseDate.localeCompare(b.baseDate)
       if (dateCompare !== 0) return dateCompare
@@ -53,10 +53,12 @@ export function TasksPage() {
   const completed = todaysTasks.filter(t => isCompleted(t, overrides, today))
   const remaining = todaysTasks.filter(t => !isCompleted(t, overrides, today))
 
-  // All tasks view — sorted by date, grouped
+  // All tasks view — visible tasks sorted by date
   const allTasks = useMemo(() => {
-    return [...tasks].sort((a, b) => a.baseDate.localeCompare(b.baseDate))
-  }, [tasks])
+    return [...tasks]
+      .filter(t => isVisible(t, today))
+      .sort((a, b) => a.baseDate.localeCompare(b.baseDate))
+  }, [tasks, today])
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
