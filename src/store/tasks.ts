@@ -10,12 +10,15 @@ interface TasksState {
   tasks: Task[]
   overrides: TaskOverride[]
   orderedTaskIds: string[]
+  // Cumulative completed count per targetId (persists even after tasks are purged).
+  // Key '_standalone' = tasks with no target.
+  cumulativeCompleted: Record<string, number>
   hasHydrated: boolean
 
   addTask: (task: Omit<Task, 'id' | 'completedDates'>) => void
   updateTask: (id: string, changes: Partial<Omit<Task, 'id'>>) => void
   deleteTask: (id: string) => void
-  purgeOldCompleted: () => void   // removes one-time tasks completed > 9 days ago
+  purgeOldCompleted: () => void   // removes one-time tasks completed > 2 days ago
   markComplete: (taskId: string, date?: string) => void
   markIncomplete: (taskId: string, date?: string) => void
   editOccurrence: (taskId: string, date: string, changes: Partial<TaskOverride>) => void
@@ -42,6 +45,7 @@ export const useTasksStore = create<TasksState>()(
       tasks: [],
       overrides: [],
       orderedTaskIds: [],
+      cumulativeCompleted: {},
       hasHydrated: false,
 
       addTask: (data) => {
@@ -68,20 +72,19 @@ export const useTasksStore = create<TasksState>()(
       },
 
       purgeOldCompleted: () => {
-        // Hard-delete one-time tasks whose most recent completion is > 9 days old.
-        // Recurring tasks are never purged this way — they keep recurring.
+        // Hard-delete one-time tasks whose most recent completion is > 2 days old.
+        // Recurring tasks are never purged — they keep recurring.
         const today = localToday()
         const [ty, tm, td] = today.split('-').map(Number)
         const todayMs = new Date(ty, tm - 1, td).getTime()
         set(s => {
           const keep = s.tasks.filter(t => {
-            if (t.repeat) return true           // recurring: never auto-purge
-            if (t.completedDates.length === 0) return true  // not yet completed
+            if (t.repeat) return true
+            if (t.completedDates.length === 0) return true
             const latest = t.completedDates.slice().sort().at(-1)!
             const [cy, cm, cd] = latest.split('-').map(Number)
             const completedMs = new Date(cy, cm - 1, cd).getTime()
-            const daysSince = (todayMs - completedMs) / 86_400_000
-            return daysSince <= 9
+            return (todayMs - completedMs) / 86_400_000 <= 2
           })
           const keepIds = new Set(keep.map(t => t.id))
           return {
@@ -94,26 +97,45 @@ export const useTasksStore = create<TasksState>()(
 
       markComplete: (taskId, date) => {
         const today = date ?? localToday()
-        set(s => ({
-          tasks: s.tasks.map(t => {
-            if (t.id !== taskId) return t
-            const dates = t.completedDates.includes(today)
-              ? t.completedDates
-              : capCompletedDates([...t.completedDates, today])
-            return { ...t, completedDates: dates }
-          }),
-          overrides: s.overrides.filter(o => !(o.taskId === taskId && o.date === today)),
-        }))
+        set(s => {
+          const task = s.tasks.find(t => t.id === taskId)
+          if (!task) return s
+          // Only increment cumulative count if not already completed today
+          const alreadyDone = task.completedDates.includes(today)
+          const key = task.targetId ?? '_standalone'
+          return {
+            tasks: s.tasks.map(t => {
+              if (t.id !== taskId) return t
+              const dates = alreadyDone
+                ? t.completedDates
+                : capCompletedDates([...t.completedDates, today])
+              return { ...t, completedDates: dates }
+            }),
+            overrides: s.overrides.filter(o => !(o.taskId === taskId && o.date === today)),
+            cumulativeCompleted: alreadyDone
+              ? s.cumulativeCompleted
+              : { ...s.cumulativeCompleted, [key]: (s.cumulativeCompleted[key] ?? 0) + 1 },
+          }
+        })
       },
 
       markIncomplete: (taskId, date) => {
         const today = date ?? localToday()
-        set(s => ({
-          tasks: s.tasks.map(t => {
-            if (t.id !== taskId) return t
-            return { ...t, completedDates: t.completedDates.filter(d => d !== today) }
-          }),
-        }))
+        set(s => {
+          const task = s.tasks.find(t => t.id === taskId)
+          if (!task) return s
+          const wasDone = task.completedDates.includes(today)
+          const key = task.targetId ?? '_standalone'
+          return {
+            tasks: s.tasks.map(t => {
+              if (t.id !== taskId) return t
+              return { ...t, completedDates: t.completedDates.filter(d => d !== today) }
+            }),
+            cumulativeCompleted: wasDone
+              ? { ...s.cumulativeCompleted, [key]: Math.max(0, (s.cumulativeCompleted[key] ?? 1) - 1) }
+              : s.cumulativeCompleted,
+          }
+        })
       },
 
       editOccurrence: (taskId, date, changes) => {
