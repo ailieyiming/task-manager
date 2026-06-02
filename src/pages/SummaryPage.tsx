@@ -1,18 +1,29 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useTasksStore } from '../store/tasks'
 import { useTargetsStore } from '../store/targets'
-import { isPast, daysUntil } from '../lib/date'
+import { localToday, isPast, daysUntil } from '../lib/date'
+import { isTaskDueToday, isCompleted } from '../lib/recurrence'
 
 export function SummaryPage() {
-  const { cumulativeCompleted, hasHydrated } = useTasksStore()
+  const { cumulativeCompleted, tasks, overrides, hasHydrated } = useTasksStore()
   const { targets } = useTargetsStore()
+  const [today, setToday] = useState(() => localToday())
   const [spinning, setSpinning] = useState(false)
 
   const refresh = useCallback(() => {
     setSpinning(true)
+    setToday(localToday())
     setTimeout(() => setSpinning(false), 600)
   }, [])
+
+  const todaysTasks = useMemo(() =>
+    tasks.filter(t => isTaskDueToday(t, overrides, today)),
+    [tasks, overrides, today]
+  )
+  const completedToday = todaysTasks.filter(t => isCompleted(t, overrides, today)).length
+  const remainingToday = todaysTasks.length - completedToday
+  const pct = todaysTasks.length > 0 ? Math.round((completedToday / todaysTasks.length) * 100) : 0
 
   if (!hasHydrated) {
     return (
@@ -108,7 +119,65 @@ export function SummaryPage() {
                 </div>
               </div>
             )}
+
+            {/* Today's progress */}
+            <div>
+              <p className="text-[12px] font-medium text-stone-400 uppercase tracking-wide mb-2">Today</p>
+              <div className="bg-white rounded-2xl p-4 shadow-sm border border-stone-100">
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="text-center">
+                    <p className="text-[28px] font-bold text-stone-900">{todaysTasks.length}</p>
+                    <p className="text-[11px] text-stone-400 uppercase tracking-wide">Total</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[28px] font-bold text-[#1a4731]">{completedToday}</p>
+                    <p className="text-[11px] text-stone-400 uppercase tracking-wide">Done</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[28px] font-bold text-stone-500">{remainingToday}</p>
+                    <p className="text-[11px] text-stone-400 uppercase tracking-wide">Left</p>
+                  </div>
+                </div>
+                <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#1a4731] rounded-full transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <p className="text-center text-[13px] text-stone-500 mt-2">{pct}% complete</p>
+              </div>
+            </div>
           </>
+        )}
+
+        {/* Show today's progress even with no cumulative data */}
+        {!hasAnyData && todaysTasks.length > 0 && (
+          <div>
+            <p className="text-[12px] font-medium text-stone-400 uppercase tracking-wide mb-2">Today</p>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-stone-100">
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="text-center">
+                  <p className="text-[28px] font-bold text-stone-900">{todaysTasks.length}</p>
+                  <p className="text-[11px] text-stone-400 uppercase tracking-wide">Total</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[28px] font-bold text-[#1a4731]">{completedToday}</p>
+                  <p className="text-[11px] text-stone-400 uppercase tracking-wide">Done</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[28px] font-bold text-stone-500">{remainingToday}</p>
+                  <p className="text-[11px] text-stone-400 uppercase tracking-wide">Left</p>
+                </div>
+              </div>
+              <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#1a4731] rounded-full transition-all"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <p className="text-center text-[13px] text-stone-500 mt-2">{pct}% complete</p>
+            </div>
+          </div>
         )}
       </div>
     </div>
