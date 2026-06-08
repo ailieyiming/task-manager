@@ -84,7 +84,7 @@ export const useTasksStore = create<TasksState>()(
             const latest = t.completedDates.slice().sort().at(-1)!
             const [cy, cm, cd] = latest.split('-').map(Number)
             const completedMs = new Date(cy, cm - 1, cd).getTime()
-            return (todayMs - completedMs) / 86_400_000 <= 2
+            return (todayMs - completedMs) / 86_400_000 <= 1
           })
           const keepIds = new Set(keep.map(t => t.id))
           return {

@@ -63,7 +63,7 @@ export function isVisible(task: Task, today: string): boolean {
   const [ty, tm, td] = today.split('-').map(Number)
   const completedMs = new Date(cy, cm - 1, cd).getTime()
   const todayMs = new Date(ty, tm - 1, td).getTime()
-  return (todayMs - completedMs) / 86_400_000 <= 2
+  return (todayMs - completedMs) / 86_400_000 <= 1
 }
 
 export { addDays, addWeeks, addMonths }
