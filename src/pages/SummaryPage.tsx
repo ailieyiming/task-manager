@@ -6,16 +6,17 @@ import { localToday, isPast, daysUntil } from '../lib/date'
 import { isTaskDueToday, isCompleted } from '../lib/recurrence'
 
 export function SummaryPage() {
-  const { cumulativeCompleted, tasks, overrides, hasHydrated } = useTasksStore()
+  const { cumulativeCompleted, tasks, overrides, hasHydrated, purgeOldCompleted } = useTasksStore()
   const { targets } = useTargetsStore()
   const [today, setToday] = useState(() => localToday())
   const [spinning, setSpinning] = useState(false)
 
   const refresh = useCallback(() => {
+    purgeOldCompleted()
     setSpinning(true)
     setToday(localToday())
     setTimeout(() => setSpinning(false), 600)
-  }, [])
+  }, [purgeOldCompleted])
 
   const todaysTasks = useMemo(() =>
     tasks.filter(t => isTaskDueToday(t, overrides, today)),

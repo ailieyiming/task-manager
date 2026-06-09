@@ -20,7 +20,7 @@ import type { Task } from '../store/types'
 type ViewMode = 'today' | 'all'
 
 export function TasksPage() {
-  const { tasks, overrides, orderedTaskIds, reorder, hasHydrated } = useTasksStore()
+  const { tasks, overrides, orderedTaskIds, reorder, hasHydrated, purgeOldCompleted } = useTasksStore()
   const [showForm, setShowForm] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('today')
@@ -28,10 +28,11 @@ export function TasksPage() {
   const [spinning, setSpinning] = useState(false)
 
   const refresh = useCallback(() => {
+    purgeOldCompleted()
     setSpinning(true)
     setToday(localToday())
     setTimeout(() => setSpinning(false), 600)
-  }, [])
+  }, [purgeOldCompleted])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
