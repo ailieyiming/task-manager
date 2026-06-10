@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Plus, RefreshCw } from 'lucide-react'
+import { Plus, RefreshCw, Trash2 } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -20,7 +20,7 @@ import type { Task } from '../store/types'
 type ViewMode = 'today' | 'all'
 
 export function TasksPage() {
-  const { tasks, overrides, orderedTaskIds, reorder, hasHydrated, purgeOldCompleted } = useTasksStore()
+  const { tasks, overrides, orderedTaskIds, reorder, hasHydrated, purgeOldCompleted, deleteTask } = useTasksStore()
   const [showForm, setShowForm] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('today')
@@ -222,12 +222,21 @@ export function TasksPage() {
                     </div>
                   </div>
 
-                  {/* Edit button */}
+                  {/* Edit / Delete buttons */}
                   <button
                     onClick={() => { setEditingTask(task); setShowForm(true) }}
                     className="flex-shrink-0 px-3 py-1.5 text-[13px] font-medium text-stone-500 border border-stone-200 rounded-lg hover:text-stone-700"
                   >
                     Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm(`Delete "${task.title}" permanently?`)) deleteTask(task.id)
+                    }}
+                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-stone-400 hover:text-red-600 rounded-lg"
+                    title="Delete task"
+                  >
+                    <Trash2 size={16} />
                   </button>
                 </div>
               ))}
