@@ -72,15 +72,20 @@ export const useTasksStore = create<TasksState>()(
       },
 
       purgeOldCompleted: () => {
-        // Hard-delete one-time tasks whose most recent completion is > 2 days old.
-        // Recurring tasks are never purged — they keep recurring.
+        // Hard-delete stale one-time tasks. Recurring tasks are never purged.
+        // Removes: completed tasks older than 1 day, AND uncompleted tasks whose baseDate is in the past.
         const today = localToday()
         const [ty, tm, td] = today.split('-').map(Number)
         const todayMs = new Date(ty, tm - 1, td).getTime()
         set(s => {
           const keep = s.tasks.filter(t => {
             if (t.repeat) return true
-            if (t.completedDates.length === 0) return true
+            // Uncompleted one-time task past its date → purge
+            if (t.completedDates.length === 0) {
+              const [by, bm, bd] = t.baseDate.split('-').map(Number)
+              return new Date(by, bm - 1, bd).getTime() >= todayMs
+            }
+            // Completed one-time task → purge if completed > 1 day ago
             const latest = t.completedDates.slice().sort().at(-1)!
             const [cy, cm, cd] = latest.split('-').map(Number)
             const completedMs = new Date(cy, cm - 1, cd).getTime()
