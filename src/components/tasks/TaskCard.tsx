@@ -6,7 +6,7 @@ import type { Task } from '../../store/types'
 import { useTasksStore } from '../../store/tasks'
 import { useTargetsStore } from '../../store/targets'
 import { formatDisplay, localToday } from '../../lib/date'
-import { isCompleted } from '../../lib/recurrence'
+import { isCompleted, isOverdue } from '../../lib/recurrence'
 
 interface Props {
   task: Task
@@ -20,6 +20,7 @@ export function TaskCard({ task, onEdit }: Props) {
 
   const today = localToday()
   const done = isCompleted(task, overrides, today)
+  const overdue = isOverdue(task, overrides, today)
   const target = task.targetId ? targets.find(t => t.id === task.targetId) : null
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id })
@@ -45,7 +46,7 @@ export function TaskCard({ task, onEdit }: Props) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 bg-white rounded-xl px-3 py-3 shadow-sm border border-stone-100 transition-opacity ${completing ? 'opacity-50' : ''}`}
+      className={`flex items-center gap-3 bg-white rounded-xl px-3 py-3 shadow-sm border transition-opacity ${completing ? 'opacity-50' : ''} ${overdue ? 'border-red-400 bg-red-50' : 'border-stone-100'}`}
     >
       {/* Checkbox */}
       <button
