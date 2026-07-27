@@ -1,4 +1,6 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, GripVertical } from 'lucide-react'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { Target } from '../../store/types'
 import { useTasksStore } from '../../store/tasks'
 import { daysUntil, isPast, localToday } from '../../lib/date'
@@ -22,8 +24,15 @@ export function TargetCard({ target, onEdit, onDelete }: Props) {
   const overdue = isPast(target.deadline)
   const progress = totalAll > 0 ? Math.round((completedAll / totalAll) * 100) : 0
 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: target.id })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
+
   return (
-    <div className={`bg-white rounded-2xl p-4 shadow-sm border ${overdue && completedAll < totalAll ? 'border-red-200' : 'border-stone-100'}`}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`bg-white rounded-2xl p-4 shadow-sm border ${overdue && completedAll < totalAll ? 'border-red-200' : 'border-stone-100'}`}
+    >
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="text-[16px] font-semibold text-stone-900 truncate">{target.title}</h3>
@@ -31,13 +40,16 @@ export function TargetCard({ target, onEdit, onDelete }: Props) {
             <p className="text-[13px] text-stone-500 mt-0.5 line-clamp-1">{target.description}</p>
           )}
         </div>
-        <div className="flex gap-1 ml-2">
+        <div className="flex items-center gap-1 ml-2">
           <button onClick={() => onEdit(target)} className="p-1.5 text-stone-400 hover:text-stone-600">
             <Pencil size={15} />
           </button>
           <button onClick={() => onDelete(target)} className="p-1.5 text-stone-400 hover:text-red-500">
             <Trash2 size={15} />
           </button>
+          <div {...attributes} {...listeners} className="p-1.5 text-stone-300 cursor-grab active:cursor-grabbing touch-none">
+            <GripVertical size={18} />
+          </div>
         </div>
       </div>
 

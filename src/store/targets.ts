@@ -7,11 +7,13 @@ import { localToday } from '../lib/date'
 
 interface TargetsState {
   targets: Target[]
+  orderedTargetIds: string[]
   hasHydrated: boolean
 
   addTarget: (data: Omit<Target, 'id' | 'createdAt'>) => void
   updateTarget: (id: string, changes: Partial<Omit<Target, 'id' | 'createdAt'>>) => void
   deleteTarget: (id: string) => void
+  reorderTargets: (newOrder: string[]) => void
   setHydrated: () => void
 }
 
@@ -25,11 +27,16 @@ export const useTargetsStore = create<TargetsState>()(
   persist(
     (set) => ({
       targets: [],
+      orderedTargetIds: [],
       hasHydrated: false,
 
       addTarget: (data) => {
-        const target: Target = { ...data, id: nanoid(), createdAt: localToday() }
-        set(s => ({ targets: [...s.targets, target] }))
+        const id = nanoid()
+        const target: Target = { ...data, id, createdAt: localToday() }
+        set(s => ({
+          targets: [...s.targets, target],
+          orderedTargetIds: [...s.orderedTargetIds, id],
+        }))
       },
 
       updateTarget: (id, changes) => {
@@ -39,8 +46,13 @@ export const useTargetsStore = create<TargetsState>()(
       },
 
       deleteTarget: (id) => {
-        set(s => ({ targets: s.targets.filter(t => t.id !== id) }))
+        set(s => ({
+          targets: s.targets.filter(t => t.id !== id),
+          orderedTargetIds: s.orderedTargetIds.filter(oid => oid !== id),
+        }))
       },
+
+      reorderTargets: (newOrder) => set({ orderedTargetIds: newOrder }),
 
       setHydrated: () => set({ hasHydrated: true }),
     }),

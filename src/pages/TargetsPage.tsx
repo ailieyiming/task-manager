@@ -1,5 +1,15 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Plus } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { useTargetsStore } from '../store/targets'
 import { useTasksStore } from '../store/tasks'
 import { TargetCard } from '../components/targets/TargetCard'
@@ -7,7 +17,7 @@ import { TargetForm } from '../components/targets/TargetForm'
 import type { Target } from '../store/types'
 
 export function TargetsPage() {
-  const { targets, deleteTarget, hasHydrated } = useTargetsStore()
+  const { targets, orderedTargetIds, reorderTargets, deleteTarget, hasHydrated } = useTargetsStore()
   const { updateTask, tasks } = useTasksStore()
   const [showForm, setShowForm] = useState(false)
   const [editingTarget, setEditingTarget] = useState<Target | null>(null)
@@ -15,6 +25,34 @@ export function TargetsPage() {
   const [deleteLinkedTasks, setDeleteLinkedTasks] = useState(false)
 
   const { deleteTask } = useTasksStore()
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
+  )
+
+  const sortedTargets = useMemo(() => {
+    const withOrder = targets.map(t => ({
+      ...t,
+      _order: orderedTargetIds.indexOf(t.id),
+    }))
+    return withOrder.sort((a, b) => {
+      const ai = a._order === -1 ? 9999 : a._order
+      const bi = b._order === -1 ? 9999 : b._order
+      return ai - bi
+    })
+  }, [targets, orderedTargetIds])
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = orderedTargetIds.indexOf(String(active.id))
+      const newIndex = orderedTargetIds.indexOf(String(over.id))
+      if (oldIndex !== -1 && newIndex !== -1) {
+        reorderTargets(arrayMove(orderedTargetIds, oldIndex, newIndex))
+      }
+    }
+  }
 
   const handleDeleteConfirm = () => {
     if (!pendingDelete) return
@@ -68,14 +106,18 @@ export function TargetsPage() {
             </button>
           </div>
         ) : (
-          targets.map(target => (
-            <TargetCard
-              key={target.id}
-              target={target}
-              onEdit={(t) => { setEditingTarget(t); setShowForm(true) }}
-              onDelete={(t) => setPendingDelete(t)}
-            />
-          ))
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={sortedTargets.map(t => t.id)} strategy={verticalListSortingStrategy}>
+              {sortedTargets.map(target => (
+                <TargetCard
+                  key={target.id}
+                  target={target}
+                  onEdit={(t) => { setEditingTarget(t); setShowForm(true) }}
+                  onDelete={(t) => setPendingDelete(t)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         )}
       </div>
 
