@@ -15,46 +15,8 @@ import { localToday } from '../lib/date'
 import { isTaskDueToday, isCompleted, isVisible } from '../lib/recurrence'
 import { TaskCard } from '../components/tasks/TaskCard'
 import { TaskForm } from '../components/tasks/TaskForm'
+import { DailyQuote } from '../components/tasks/DailyQuote'
 import type { Task } from '../store/types'
-
-const dailyAffirmations = [
-  'I am becoming the person who can create the life I want.',
-  'I welcome good opportunities and meet them with confidence.',
-  'Small steps I take today are building something meaningful.',
-  'I trust my pace and keep moving toward what matters to me.',
-  'I am worthy of the good things I am working toward.',
-  'I have the clarity and courage to take my next step.',
-  'My focus today is shaping a future I feel proud of.',
-  'I make room for progress, possibility, and peace.',
-  'I can handle today one thoughtful step at a time.',
-  'I am open to joy, growth, and unexpected good things.',
-  'What I do consistently matters more than doing it perfectly.',
-  'I bring valuable strengths to every challenge I meet.',
-  'I choose to notice how far I have already come.',
-  'I am creating a life that feels true to me.',
-  'I deserve the time and care it takes to reach my goals.',
-  'Today, I give my energy to what I can shape and grow.',
-  'I trust myself to make choices that support my wellbeing.',
-  'I am ready to receive the opportunities aligned with my effort.',
-  'Every day gives me another chance to begin with intention.',
-  'I can be ambitious and patient with myself at the same time.',
-  'I notice possibility, and I take action when it appears.',
-  'My ideas, effort, and perspective have real value.',
-  'I release what I cannot control and nurture what I can.',
-  'I am allowed to grow beyond the limits I once imagined.',
-  'I meet this day with an open mind and a steady heart.',
-  'I am building confidence by keeping promises to myself.',
-  'Good things can find me while I work toward them.',
-  'I have everything I need to take the next small step.',
-  'I make choices today that my future self will thank me for.',
-  'I am grateful for where I am and excited for where I am going.',
-  'I let hope guide me and let consistent action carry me forward.',
-]
-
-function affirmationForDate(date: string): string {
-  const dayNumber = Number(date.replaceAll('-', ''))
-  return dailyAffirmations[dayNumber % dailyAffirmations.length]
-}
 
 type ViewMode = 'today' | 'all'
 
@@ -130,7 +92,6 @@ export function TasksPage() {
   const displayDate = new Date().toLocaleDateString('en-GB', {
     weekday: 'short', day: 'numeric', month: 'short'
   })
-  const affirmation = affirmationForDate(today)
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -193,10 +154,7 @@ export function TasksPage() {
 
       {/* Task list */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-        <section className="rounded-2xl border border-[#1e3a5f]/10 bg-[#1e3a5f]/5 px-4 py-3.5" aria-label="Today's affirmation">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1e3a5f]/65 mb-1">Today's affirmation</p>
-          <p className="text-[15px] leading-snug font-medium text-[#1e3a5f]">“{affirmation}”</p>
-        </section>
+        <DailyQuote date={today} />
         {viewMode === 'today' ? (
           todaysTasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center">
