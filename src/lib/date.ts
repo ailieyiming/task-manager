@@ -1,4 +1,5 @@
 // Always use these utils — never new Date('YYYY-MM-DD') (parses as UTC, off-by-one on iOS)
+import { differenceInCalendarDays } from 'date-fns'
 
 export function parseLocalDate(s: string): Date {
   const [y, m, d] = s.split('-').map(Number)
@@ -31,4 +32,18 @@ export function daysUntil(dateStr: string): number {
 
 export function isPast(dateStr: string): boolean {
   return daysUntil(dateStr) < 0
+}
+
+export function targetTimeline(createdAt: string, deadline: string, today = localToday()) {
+  const total = Math.max(0, differenceInCalendarDays(parseLocalDate(deadline), parseLocalDate(createdAt)))
+  const passed = Math.min(total, Math.max(0, differenceInCalendarDays(parseLocalDate(today), parseLocalDate(createdAt))))
+  const remaining = Math.max(0, differenceInCalendarDays(parseLocalDate(deadline), parseLocalDate(today)))
+  const overdue = today > deadline
+
+  return {
+    passed,
+    remaining,
+    percent: total === 0 ? (today >= deadline ? 100 : 0) : Math.round((passed / total) * 100),
+    overdue,
+  }
 }
