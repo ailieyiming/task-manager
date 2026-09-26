@@ -5,9 +5,10 @@ import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
 interface QuotesState {
   keptIds: number[]
   rejectedIds: number[]
+  decidedOn: string | null
   hasHydrated: boolean
-  keepQuote: (id: number) => void
-  rejectQuote: (id: number) => void
+  keepQuote: (id: number, date: string) => void
+  rejectQuote: (id: number, date?: string) => void
   setHydrated: () => void
 }
 
@@ -22,16 +23,19 @@ export const useQuotesStore = create<QuotesState>()(
     (set) => ({
       keptIds: [],
       rejectedIds: [],
+      decidedOn: null,
       hasHydrated: false,
 
-      keepQuote: (id) => set((state) => ({
+      keepQuote: (id, date) => set((state) => ({
         keptIds: state.keptIds.includes(id) ? state.keptIds : [...state.keptIds, id],
         rejectedIds: state.rejectedIds.filter((quoteId) => quoteId !== id),
+        decidedOn: date,
       })),
 
-      rejectQuote: (id) => set((state) => ({
+      rejectQuote: (id, date) => set((state) => ({
         keptIds: state.keptIds.filter((quoteId) => quoteId !== id),
         rejectedIds: state.rejectedIds.includes(id) ? state.rejectedIds : [...state.rejectedIds, id],
+        decidedOn: date ?? state.decidedOn,
       })),
 
       setHydrated: () => set({ hasHydrated: true }),
@@ -39,7 +43,7 @@ export const useQuotesStore = create<QuotesState>()(
     {
       name: 'task-manager-quotes',
       storage: createJSONStorage(() => idbStorage),
-      partialize: (state) => ({ keptIds: state.keptIds, rejectedIds: state.rejectedIds }),
+      partialize: (state) => ({ keptIds: state.keptIds, rejectedIds: state.rejectedIds, decidedOn: state.decidedOn }),
       onRehydrateStorage: () => (state) => { state?.setHydrated() },
     }
   )

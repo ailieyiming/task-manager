@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Check, X } from 'lucide-react'
-import { quoteForDate, quotes } from '../../lib/quotes'
+import { Bookmark, Check, X } from 'lucide-react'
+import { quoteForDate, quoteSource, quotes } from '../../lib/quotes'
 import { useQuotesStore } from '../../store/quotes'
 
 interface Props {
@@ -8,59 +8,62 @@ interface Props {
 }
 
 export function DailyQuote({ date }: Props) {
-  const { keptIds, rejectedIds, hasHydrated, keepQuote, rejectQuote } = useQuotesStore()
+  const { keptIds, rejectedIds, decidedOn, hasHydrated, keepQuote, rejectQuote } = useQuotesStore()
   const [showSaved, setShowSaved] = useState(false)
 
   if (!hasHydrated) {
-    return <div className="h-28 rounded-2xl bg-[#1e3a5f]/5 animate-pulse" aria-label="Loading today's quote" />
+    return <div className="h-18 rounded-xl bg-[#1e3a5f]/5 animate-pulse" aria-label="Loading today's quote" />
   }
 
   const quote = quoteForDate(date, rejectedIds)
-  const isKept = quote ? keptIds.includes(quote.id) : false
+  const showChoices = quote && decidedOn !== date && !keptIds.includes(quote.id)
 
   return (
     <>
-      <section className="rounded-2xl border border-[#1e3a5f]/10 bg-[#1e3a5f]/5 px-4 py-3.5" aria-label="Today's manifestation">
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1e3a5f]/65">Today's manifestation</p>
-          {keptIds.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowSaved(true)}
-              className="text-[12px] font-medium text-[#1e3a5f] underline underline-offset-2"
-            >
-              Kept ({keptIds.length})
-            </button>
-          )}
+      <section className="rounded-xl border border-[#1e3a5f]/10 bg-[#1e3a5f]/5 px-3 py-2" aria-label="Today's quote">
+        <div className="flex items-center justify-between gap-2 min-h-8">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#1e3a5f]/65">Today's quote</p>
+          <div className="flex items-center gap-1">
+            {keptIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowSaved(true)}
+                aria-label={`View ${keptIds.length} kept quotes`}
+                className="min-w-8 h-8 px-1 flex items-center justify-center gap-0.5 text-[#1e3a5f]"
+              >
+                <Bookmark size={15} /> <span className="text-[11px]">{keptIds.length}</span>
+              </button>
+            )}
+            {showChoices && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => keepQuote(quote.id, date)}
+                  aria-label="Keep this quote"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#1e3a5f]/10 text-[#1e3a5f]"
+                >
+                  <Check size={17} strokeWidth={2.5} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => rejectQuote(quote.id, date)}
+                  aria-label="Remove this quote"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white text-stone-500 border border-stone-200"
+                >
+                  <X size={16} strokeWidth={2.5} />
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {quote ? (
           <>
-            <p className="text-[15px] leading-snug font-medium text-[#1e3a5f]">“{quote.text}”</p>
-            <div className="flex items-center gap-2 mt-3">
-              <button
-                type="button"
-                onClick={() => keepQuote(quote.id)}
-                aria-label={isKept ? 'Quote kept' : 'Keep this quote'}
-                aria-pressed={isKept}
-                className={`min-h-10 flex-1 flex items-center justify-center gap-1.5 rounded-xl border text-[13px] font-medium ${
-                  isKept ? 'bg-[#1e3a5f] border-[#1e3a5f] text-white' : 'bg-white border-[#1e3a5f]/20 text-[#1e3a5f]'
-                }`}
-              >
-                <Check size={16} /> {isKept ? 'Kept' : 'Keep'}
-              </button>
-              <button
-                type="button"
-                onClick={() => rejectQuote(quote.id)}
-                aria-label="Remove this quote"
-                className="min-h-10 flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white text-stone-600 text-[13px] font-medium"
-              >
-                <X size={16} /> Remove
-              </button>
-            </div>
+            <p className="text-[14px] leading-5 font-medium text-[#1e3a5f]">“{quote.text}”</p>
+            {quote.source && <p className="mt-0.5 text-[10px] text-stone-500 truncate" title={quote.source}>— {quote.source}</p>}
           </>
         ) : (
-          <p className="text-[13px] leading-relaxed text-stone-600">You've removed all 100 quotes.</p>
+          <p className="text-[12px] text-stone-600">You've removed all the quotes.</p>
         )}
       </section>
 
@@ -85,7 +88,10 @@ export function DailyQuote({ date }: Props) {
               ) : (
                 keptIds.map((id) => (
                   <div key={id} className="flex items-start gap-3 py-3 border-b border-stone-100">
-                    <p className="flex-1 text-[14px] leading-relaxed text-stone-800">“{quotes[id]}”</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] leading-relaxed text-stone-800">“{quotes[id]}”</p>
+                      {quoteSource(id) && <p className="text-[11px] text-stone-500 mt-0.5">— {quoteSource(id)}</p>}
+                    </div>
                     <button
                       type="button"
                       onClick={() => rejectQuote(id)}

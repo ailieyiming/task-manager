@@ -1,5 +1,5 @@
-// Original affirmations. Keep the order stable: saved choices refer to these indexes.
-export const quotes = [
+// Keep the first 100 entries and their order stable: saved choices refer to indexes.
+const englishQuotes = [
   // Steadiness
   'I move through today with a calm and steady mind.',
   'My strength grows through consistent, quiet action.',
@@ -111,15 +111,56 @@ export const quotes = [
   'I belong wherever I choose to show up fully.',
 ] as const
 
+// Short excerpts from the original texts. The source is shown with each quote.
+const chineseQuotes = [
+  { text: '上善若水。', source: '《道德经》第八章' },
+  { text: '知足者富。', source: '《道德经》第三十三章' },
+  { text: '重为轻根，静为躁君。', source: '《道德经》第二十六章' },
+  { text: '千里之行，始于足下。', source: '《道德经》第六十四章' },
+  { text: '静胜躁，寒胜热。', source: '《道德经》第四十五章' },
+  { text: '知彼知己，百战不殆。', source: '《孙子兵法·谋攻》' },
+  { text: '胜兵先胜而后求战。', source: '《孙子兵法·军形》' },
+  { text: '不战而屈人之兵。', source: '《孙子兵法·谋攻》' },
+  { text: '以虞待不虞者胜。', source: '《孙子兵法·谋攻》' },
+  { text: '先为不可胜，以待敌之可胜。', source: '《孙子兵法·军形》' },
+  { text: '志不强者智不达，言不信者行不果。', source: '《墨子·修身》' },
+  { text: '贫则见廉，富则见义。', source: '《墨子·修身》' },
+  { text: '务言而缓行，虽辩必不听。', source: '《墨子·修身》' },
+  { text: '兼相爱，交相利。', source: '《墨子·兼爱中》' },
+  { text: '兴天下之利，除天下之害。', source: '《墨子·兼爱下》' },
+  { text: '没有调查，没有发言权。', source: '毛泽东《反对本本主义》' },
+  { text: '调查就是解决问题。', source: '毛泽东《反对本本主义》' },
+  { text: '排除万难，去争取胜利。', source: '毛泽东《愚公移山》' },
+  { text: '自力更生。', source: '毛泽东《抗日战争胜利后的时局和我们的方针》' },
+  { text: '只要你说得对，我们就改正。', source: '毛泽东《为人民服务》' },
+] as const
+
+export const quotes: readonly string[] = [
+  ...englishQuotes,
+  ...chineseQuotes.map((quote) => quote.text),
+]
+
+export function quoteSource(id: number): string | undefined {
+  return chineseQuotes[id - englishQuotes.length]?.source
+}
+
 export function quoteForDate(date: string, rejectedIds: number[]) {
   const [year, month, day] = date.split('-').map(Number)
   const dayNumber = Math.floor(Date.UTC(year, month - 1, day) / 86_400_000)
-  const firstIndex = ((dayNumber * 37) % quotes.length + quotes.length) % quotes.length
   const rejected = new Set(rejectedIds)
+  const isChineseDay = dayNumber % 2 === 0
+  const preferredStart = isChineseDay ? englishQuotes.length : 0
+  const preferredLength = isChineseDay ? chineseQuotes.length : englishQuotes.length
+  const otherStart = isChineseDay ? 0 : englishQuotes.length
+  const otherLength = isChineseDay ? englishQuotes.length : chineseQuotes.length
+  const dayInLanguage = Math.floor(dayNumber / 2)
 
-  for (let offset = 0; offset < quotes.length; offset++) {
-    const id = (firstIndex + offset) % quotes.length
-    if (!rejected.has(id)) return { id, text: quotes[id] }
+  for (const [start, length] of [[preferredStart, preferredLength], [otherStart, otherLength]]) {
+    const firstIndex = ((dayInLanguage * 37) % length + length) % length
+    for (let offset = 0; offset < length; offset++) {
+      const id = start + (firstIndex + offset) % length
+      if (!rejected.has(id)) return { id, text: quotes[id], source: quoteSource(id) }
+    }
   }
   return null
 }
