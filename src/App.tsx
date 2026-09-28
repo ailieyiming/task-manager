@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore } from './store/app'
 import { useTasksStore } from './store/tasks'
 import { TabBar } from './components/layout/TabBar'
@@ -13,6 +13,7 @@ import { supabase } from './lib/supabase'
 import { startCloudSync } from './lib/cloudSync'
 
 function App() {
+  const [recoveryFlow] = useState(() => new URLSearchParams(window.location.search).has('recover'))
   const { activeTab } = useAppStore()
   const { purgeOldCompleted } = useTasksStore()
   const tasksHydrated = useTasksStore(s => s.hasHydrated)
@@ -44,9 +45,9 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (!userId || !tasksHydrated || !targetsHydrated || !quotesHydrated) return
+    if (recoveryFlow || !userId || !tasksHydrated || !targetsHydrated || !quotesHydrated) return
     return startCloudSync(userId)
-  }, [userId, tasksHydrated, targetsHydrated, quotesHydrated])
+  }, [recoveryFlow, userId, tasksHydrated, targetsHydrated, quotesHydrated])
 
   // Re-run purge whenever the user returns to the app (tab/PWA visibility)
   useEffect(() => {
@@ -60,13 +61,17 @@ function App() {
   return (
     <div className="flex flex-col h-svh">
       <main className="flex-1 overflow-hidden flex flex-col">
-        {activeTab === 'tasks' && <TasksPage />}
-        {activeTab === 'targets' && <TargetsPage />}
-        {activeTab === 'summary' && <SummaryPage />}
-        {activeTab === 'cloud' && <CloudPage />}
+        {recoveryFlow ? <CloudPage recoveryFlow /> : (
+          <>
+            {activeTab === 'tasks' && <TasksPage />}
+            {activeTab === 'targets' && <TargetsPage />}
+            {activeTab === 'summary' && <SummaryPage />}
+            {activeTab === 'cloud' && <CloudPage />}
+          </>
+        )}
       </main>
-      <TabBar />
-      {userId && cloudMode === 'connecting' && (
+      {!recoveryFlow && <TabBar />}
+      {!recoveryFlow && userId && cloudMode === 'connecting' && (
         <div className="fixed inset-0 z-40 bg-white/75 flex items-center justify-center" role="status" aria-live="polite">
           <div className="bg-white border border-stone-100 rounded-2xl px-6 py-5 shadow-lg text-[14px] text-[#1e3a5f]">
             Connecting your data…
