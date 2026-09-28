@@ -26,14 +26,6 @@ export function SummaryPage() {
   const remainingToday = todaysTasks.length - completedToday
   const pct = todaysTasks.length > 0 ? Math.round((completedToday / todaysTasks.length) * 100) : 0
 
-  if (!hasHydrated) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#1e3a5f] border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
   const totalCompleted = Object.values(cumulativeCompleted).reduce((a, b) => a + b, 0)
 
   // Per-target daily stats
@@ -51,6 +43,14 @@ export function SummaryPage() {
 
   const standalone = todaysTasks.filter(t => !t.targetId)
   const standaloneDone = standalone.filter(t => isCompleted(t, overrides, today)).length
+
+  if (!hasHydrated) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#1e3a5f] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
