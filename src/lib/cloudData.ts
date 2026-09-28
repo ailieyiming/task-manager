@@ -1,4 +1,5 @@
 import type { Task, TaskOverride, Target } from '../store/types'
+import type { GymCheckIns } from './gym'
 
 export interface AppData {
   tasks: Task[]
@@ -10,6 +11,13 @@ export interface AppData {
   keptIds: number[]
   rejectedIds: number[]
   decidedOn: string | null
+  gymCheckIns: GymCheckIns
+}
+
+type LegacyAppData = Omit<AppData, 'gymCheckIns'> & { gymCheckIns?: GymCheckIns }
+
+export function normalizeAppData(data: LegacyAppData): AppData {
+  return { ...data, gymCheckIns: data.gymCheckIns ?? {} }
 }
 
 // Postgres jsonb may reorder object keys; compare content, not serialization order.
@@ -29,4 +37,5 @@ export function hasRecords(data: AppData): boolean {
   return data.tasks.length > 0 || data.targets.length > 0 ||
     Object.keys(data.cumulativeCompleted).length > 0 ||
     data.keptIds.length > 0 || data.rejectedIds.length > 0
+    || Object.keys(data.gymCheckIns).length > 0
 }

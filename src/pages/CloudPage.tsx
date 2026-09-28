@@ -130,7 +130,7 @@ export function CloudPage({ recoveryFlow = false }: { recoveryFlow?: boolean }) 
             </p>
           </div>
           <p className="text-[13px] text-stone-500">
-            {message ?? (mode === 'synced' ? 'Tasks, targets and quote choices are saved to Supabase.'
+            {message ?? (mode === 'synced' ? 'Tasks, targets, gym check-ins and quote choices are saved to Supabase.'
               : 'Sign in to back up your data and use it on another device.')}
           </p>
           {signedInEmail && <p className="text-[12px] text-stone-400 mt-2">{signedInEmail}</p>}

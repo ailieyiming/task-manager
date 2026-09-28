@@ -2,9 +2,11 @@ import { get as idbGet, set as idbSet } from 'idb-keyval'
 import { useTasksStore } from '../store/tasks'
 import { useTargetsStore } from '../store/targets'
 import { useQuotesStore } from '../store/quotes'
+import { useGymStore } from '../store/gym'
 import { useCloudStore } from '../store/cloud'
 import { supabase } from './supabase'
-import { hasRecords, stableStringify, type AppData } from './cloudData'
+import { hasRecords, normalizeAppData, stableStringify, type AppData } from './cloudData'
+import { isGymDate, isGymStatus } from './gym'
 
 interface CloudRow {
   data: AppData
@@ -21,10 +23,20 @@ interface SyncMarker {
 const MARKER_KEY = 'task-manager-cloud-marker'
 let currentController: SyncController | null = null
 
+function normalizeSavedSnapshot(snapshot: string): string {
+  try {
+    const data: unknown = JSON.parse(snapshot)
+    return validData(data) ? stableStringify(normalizeAppData(data)) : snapshot
+  } catch {
+    return snapshot
+  }
+}
+
 function snapshot(): AppData {
   const tasks = useTasksStore.getState()
   const targets = useTargetsStore.getState()
   const quotes = useQuotesStore.getState()
+  const gym = useGymStore.getState()
   return {
     tasks: tasks.tasks,
     overrides: tasks.overrides,
@@ -35,6 +47,7 @@ function snapshot(): AppData {
     keptIds: quotes.keptIds,
     rejectedIds: quotes.rejectedIds,
     decidedOn: quotes.decidedOn,
+    gymCheckIns: gym.checkIns,
   }
 }
 
@@ -46,7 +59,10 @@ function validData(value: unknown): value is AppData {
     !!data.cumulativeCompleted && typeof data.cumulativeCompleted === 'object' &&
     Array.isArray(data.targets) && Array.isArray(data.orderedTargetIds) &&
     Array.isArray(data.keptIds) && Array.isArray(data.rejectedIds) &&
-    (data.decidedOn === null || typeof data.decidedOn === 'string')
+    (data.decidedOn === null || typeof data.decidedOn === 'string') &&
+    (data.gymCheckIns === undefined ||
+      (!!data.gymCheckIns && typeof data.gymCheckIns === 'object' && !Array.isArray(data.gymCheckIns) &&
+        Object.entries(data.gymCheckIns).every(([date, status]) => isGymDate(date) && isGymStatus(status))))
 }
 
 async function applyCloud(data: AppData) {
@@ -58,6 +74,7 @@ async function applyCloud(data: AppData) {
   })
   useTargetsStore.setState({ targets: data.targets, orderedTargetIds: data.orderedTargetIds })
   useQuotesStore.setState({ keptIds: data.keptIds, rejectedIds: data.rejectedIds, decidedOn: data.decidedOn })
+  useGymStore.setState({ checkIns: data.gymCheckIns ?? {} })
 
   // Explicitly finish the local cache writes before recording a synced revision.
   await idbSet('task-manager-tasks', JSON.stringify({ state: {
@@ -76,6 +93,9 @@ async function applyCloud(data: AppData) {
     keptIds: data.keptIds,
     rejectedIds: data.rejectedIds,
     decidedOn: data.decidedOn,
+  }, version: 0 }))
+  await idbSet('task-manager-gym', JSON.stringify({ state: {
+    checkIns: data.gymCheckIns ?? {},
   }, version: 0 }))
 }
 
@@ -108,7 +128,9 @@ class SyncController {
       .maybeSingle()
     if (error) throw error
     if (data && !validData(data.data)) throw new Error('Cloud data has an unexpected format. Nothing was replaced.')
-    return data as CloudRow | null
+    if (!data) return null
+    const row = data as CloudRow
+    return { ...row, data: normalizeAppData(row.data) }
   }
 
   private async remember(data: AppData, row: CloudRow) {
@@ -155,6 +177,7 @@ class SyncController {
       useTasksStore.subscribe(onChange),
       useTargetsStore.subscribe(onChange),
       useQuotesStore.subscribe(onChange),
+      useGymStore.subscribe(onChange),
     ]
     this.interval = setInterval(() => { void this.refresh() }, 60_000)
     document.addEventListener('visibilitychange', this.onVisible)
@@ -168,7 +191,9 @@ class SyncController {
     this.status('connecting')
     try {
       const saved = await idbGet<SyncMarker>(MARKER_KEY)
-      this.marker = saved?.userId && typeof saved.snapshot === 'string' ? saved : null
+      this.marker = saved?.userId && typeof saved.snapshot === 'string'
+        ? { ...saved, snapshot: normalizeSavedSnapshot(saved.snapshot) }
+        : null
       this.remote = await this.readRemote()
       if (this.stopped) return
 
@@ -266,6 +291,7 @@ class SyncController {
         const data = this.remote?.data ?? {
           tasks: [], overrides: [], orderedTaskIds: [], cumulativeCompleted: {},
           targets: [], orderedTargetIds: [], keptIds: [], rejectedIds: [], decidedOn: null,
+          gymCheckIns: {},
         }
         this.applying = true
         await applyCloud(data)

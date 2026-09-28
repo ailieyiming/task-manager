@@ -4,10 +4,11 @@ import { useTasksStore } from './store/tasks'
 import { TabBar } from './components/layout/TabBar'
 import { TasksPage } from './pages/TasksPage'
 import { TargetsPage } from './pages/TargetsPage'
-import { SummaryPage } from './pages/SummaryPage'
+import { GymPage } from './pages/GymPage'
 import { CloudPage } from './pages/CloudPage'
 import { useTargetsStore } from './store/targets'
 import { useQuotesStore } from './store/quotes'
+import { useGymStore } from './store/gym'
 import { useCloudStore } from './store/cloud'
 import { supabase } from './lib/supabase'
 import { startCloudSync } from './lib/cloudSync'
@@ -19,6 +20,7 @@ function App() {
   const tasksHydrated = useTasksStore(s => s.hasHydrated)
   const targetsHydrated = useTargetsStore(s => s.hasHydrated)
   const quotesHydrated = useQuotesStore(s => s.hasHydrated)
+  const gymHydrated = useGymStore(s => s.hasHydrated)
   const userId = useCloudStore(s => s.userId)
   const cloudMode = useCloudStore(s => s.mode)
 
@@ -45,9 +47,9 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (recoveryFlow || !userId || !tasksHydrated || !targetsHydrated || !quotesHydrated) return
+    if (recoveryFlow || !userId || !tasksHydrated || !targetsHydrated || !quotesHydrated || !gymHydrated) return
     return startCloudSync(userId)
-  }, [recoveryFlow, userId, tasksHydrated, targetsHydrated, quotesHydrated])
+  }, [recoveryFlow, userId, tasksHydrated, targetsHydrated, quotesHydrated, gymHydrated])
 
   // Re-run purge whenever the user returns to the app (tab/PWA visibility)
   useEffect(() => {
@@ -65,7 +67,7 @@ function App() {
           <>
             {activeTab === 'tasks' && <TasksPage />}
             {activeTab === 'targets' && <TargetsPage />}
-            {activeTab === 'summary' && <SummaryPage />}
+            {activeTab === 'gym' && <GymPage />}
             {activeTab === 'cloud' && <CloudPage />}
           </>
         )}

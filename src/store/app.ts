@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-type Tab = 'tasks' | 'targets' | 'summary' | 'cloud'
+type Tab = 'tasks' | 'targets' | 'gym' | 'cloud'
 
 interface AppState {
   activeTab: Tab

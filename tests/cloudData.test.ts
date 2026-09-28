@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'bun:test'
-import { hasRecords, stableStringify, type AppData } from '../src/lib/cloudData'
+import { hasRecords, normalizeAppData, stableStringify, type AppData } from '../src/lib/cloudData'
 
 const empty: AppData = {
   tasks: [], overrides: [], orderedTaskIds: [], cumulativeCompleted: {},
   targets: [], orderedTargetIds: [], keptIds: [], rejectedIds: [], decidedOn: null,
+  gymCheckIns: {},
 }
 
 describe('cloud data migration', () => {
@@ -18,5 +19,12 @@ describe('cloud data migration', () => {
     expect(hasRecords({ ...empty, cumulativeCompleted: { _standalone: 1 } })).toBe(true)
     expect(hasRecords({ ...empty, keptIds: [12] })).toBe(true)
     expect(hasRecords({ ...empty, tasks: [{ id: 't', title: 'Task', baseDate: '2026-09-28', completedDates: [] }] })).toBe(true)
+    expect(hasRecords({ ...empty, gymCheckIns: { '2026-10-05': 'full' } })).toBe(true)
+  })
+
+  it('preserves older cloud snapshots while adding empty gym records', () => {
+    const olderSnapshot = { ...empty }
+    Reflect.deleteProperty(olderSnapshot, 'gymCheckIns')
+    expect(normalizeAppData(olderSnapshot)).toEqual(empty)
   })
 })
