@@ -111,13 +111,10 @@ const englishQuotes = [
   'I belong wherever I choose to show up fully.',
 ] as const
 
-// Short excerpts from the original texts. The source is shown with each quote.
+// IDs are persisted on devices and in cloud snapshots. Retired entries stay as
+// empty slots so saved choices for other quotes never point to different text.
 const chineseQuotes = [
-  { text: '上善若水。', source: '《道德经》第八章' },
-  { text: '知足者富。', source: '《道德经》第三十三章' },
-  { text: '重为轻根，静为躁君。', source: '《道德经》第二十六章' },
-  { text: '千里之行，始于足下。', source: '《道德经》第六十四章' },
-  { text: '静胜躁，寒胜热。', source: '《道德经》第四十五章' },
+  null, null, null, null, null,
   { text: '知彼知己，百战不殆。', source: '《孙子兵法·谋攻》' },
   { text: '胜兵先胜而后求战。', source: '《孙子兵法·军形》' },
   { text: '不战而屈人之兵。', source: '《孙子兵法·谋攻》' },
@@ -133,42 +130,12 @@ const chineseQuotes = [
   { text: '排除万难，去争取胜利。', source: '毛泽东《愚公移山》' },
   { text: '自力更生。', source: '毛泽东《抗日战争胜利后的时局和我们的方针》' },
   { text: '只要你说得对，我们就改正。', source: '毛泽东《为人民服务》' },
-  // Append only: persisted keep/remove choices use these positions as IDs.
-  { text: '夫唯不争，故无尤。', source: '《道德经》第八章' },
-  { text: '功成身退。', source: '《道德经》第九章' },
-  { text: '有之以为利，无之以为用。', source: '《道德经》第十一章' },
-  { text: '功成而不居。', source: '《道德经》第二章' },
-  { text: '不自见，故明。', source: '《道德经》第二十二章' },
-  { text: '不自是，故彰。', source: '《道德经》第二十二章' },
-  { text: '不自伐，故有功。', source: '《道德经》第二十二章' },
-  { text: '不自矜，故长。', source: '《道德经》第二十二章' },
-  { text: '希言自然。', source: '《道德经》第二十三章' },
-  { text: '曲则全。', source: '《道德经》第二十二章' },
-  { text: '少则得，多则惑。', source: '《道德经》第二十二章' },
-  { text: '知人者智，自知者明。', source: '《道德经》第三十三章' },
-  { text: '胜人者有力，自胜者强。', source: '《道德经》第三十三章' },
-  { text: '强行者有志。', source: '《道德经》第三十三章' },
-  { text: '不失其所者久。', source: '《道德经》第三十三章' },
-  { text: '柔弱胜刚强。', source: '《道德经》第三十六章' },
-  { text: '大器晚成。', source: '《道德经》第四十一章' },
-  { text: '大音希声。', source: '《道德经》第四十一章' },
-  { text: '大象无形。', source: '《道德经》第四十一章' },
-  { text: '知足不辱，知止不殆。', source: '《道德经》第四十四章' },
-  { text: '清静为天下正。', source: '《道德经》第四十五章' },
-  { text: '为学日益，为道日损。', source: '《道德经》第四十八章' },
-  { text: '见小曰明，守柔曰强。', source: '《道德经》第五十二章' },
-  { text: '知和曰常，知常曰明。', source: '《道德经》第五十五章' },
-  { text: '和其光，同其尘。', source: '《道德经》第五十六章' },
-  { text: '光而不耀。', source: '《道德经》第五十八章' },
-  { text: '深根固柢。', source: '《道德经》第五十九章' },
-  { text: '图难于其易，为大于其细。', source: '《道德经》第六十三章' },
-  { text: '天下难事，必作于易。', source: '《道德经》第六十三章' },
-  { text: '慎终如始，则无败事。', source: '《道德经》第六十四章' },
-  { text: '一曰慈，二曰俭，三曰不敢为天下先。', source: '《道德经》第六十七章' },
-  { text: '善战者不怒。', source: '《道德经》第六十八章' },
-  { text: '自知不自见，自爱不自贵。', source: '《道德经》第七十二章' },
-  { text: '天网恢恢，疏而不失。', source: '《道德经》第七十三章' },
-  { text: '为而不争。', source: '《道德经》第八十一章' },
+  // These 35 retired IDs remain empty; new quotes are appended below.
+  null, null, null, null, null, null, null,
+  null, null, null, null, null, null, null,
+  null, null, null, null, null, null, null,
+  null, null, null, null, null, null, null,
+  null, null, null, null, null, null, null,
 
   { text: '知之者胜，不知者不胜。', source: '《孙子兵法·始计》' },
   { text: '将者，智、信、仁、勇、严也。', source: '《孙子兵法·始计》' },
@@ -237,15 +204,60 @@ const chineseQuotes = [
   { text: '我们看事情必须要看它的实质。', source: '毛泽东《星星之火，可以燎原》' },
   { text: '自己动手，克服困难。', source: '毛泽东《开展根据地的减租、生产和拥政爱民运动》' },
   { text: '我们应该老老实实地办事。', source: '毛泽东《在中国共产党全国宣传工作会议上的讲话》' },
+
+  { text: '注重调查！', source: '毛泽东《反对本本主义》' },
+  { text: '反对瞎说！', source: '毛泽东《反对本本主义》' },
+  { text: '一切结论产生于调查情况的末尾。', source: '毛泽东《反对本本主义》' },
+  { text: '只有向实际情况作调查。', source: '毛泽东《反对本本主义》' },
+  { text: '必须努力作实际调查。', source: '毛泽东《反对本本主义》' },
+  { text: '真理的标准只能是社会的实践。', source: '毛泽东《实践论》' },
+  { text: '理论的基础是实践，又转过来为实践服务。', source: '毛泽东《实践论》' },
+  { text: '感觉只解决现象问题，理论才解决本质问题。', source: '毛泽东《实践论》' },
+  { text: '一切真知都是从直接经验发源的。', source: '毛泽东《实践论》' },
+  { text: '离开实践的认识是不可能的。', source: '毛泽东《实践论》' },
+  { text: '我们还是老实一点吧！', source: '毛泽东《改造我们的学习》' },
+  { text: '实事求是。', source: '毛泽东《改造我们的学习》' },
+  { text: '错误常常是正确的先导。', source: '毛泽东《改造我们的学习》' },
+  { text: '要有目的地去研究。', source: '毛泽东《改造我们的学习》' },
+  { text: '任何一个部门的工作，都必须先有情况的了解。', source: '毛泽东《改造我们的学习》' },
+  { text: '我们如果有缺点，就不怕别人批评指出。', source: '毛泽东《为人民服务》' },
+  { text: '要看到成绩，要看到光明，要提高我们的勇气。', source: '毛泽东《为人民服务》' },
+  { text: '我们要努力奋斗。', source: '毛泽东《为人民服务》' },
+  { text: '互相关心，互相爱护，互相帮助。', source: '毛泽东《为人民服务》' },
+  { text: '为人民的利益坚持好的，为人民的利益改正错的。', source: '毛泽东《为人民服务》' },
+  { text: '兵民是胜利之本。', source: '毛泽东《论持久战》' },
+  { text: '一切事情是要人做的。', source: '毛泽东《论持久战》' },
+  { text: '坐着不动，只有被灭亡。', source: '毛泽东《论持久战》' },
+  { text: '要分胜负，还须加上主观的努力。', source: '毛泽东《论持久战》' },
+  { text: '执行有利决战，避免不利决战。', source: '毛泽东《论持久战》' },
+  { text: '言必信，行必果。', source: '毛泽东《中国共产党在民族战争中的地位》' },
+  { text: '埋头苦干。', source: '毛泽东《中国共产党在民族战争中的地位》' },
+  { text: '只有实事求是，才能完成确定的任务。', source: '毛泽东《中国共产党在民族战争中的地位》' },
+  { text: '只有远见卓识，才能不失前进的方向。', source: '毛泽东《中国共产党在民族战争中的地位》' },
+  { text: '每天都是民众的学生。', source: '毛泽东《中国共产党在民族战争中的地位》' },
+  { text: '不解决方法问题，任务也只是瞎说一顿。', source: '毛泽东《关心群众生活，注意工作方法》' },
+  { text: '我们不但要提出任务，而且要解决完成任务的方法问题。', source: '毛泽东《关心群众生活，注意工作方法》' },
+  { text: '应该讨论，应该决定，应该实行，应该检查。', source: '毛泽东《关心群众生活，注意工作方法》' },
+  { text: '采取耐心说服的工作方法。', source: '毛泽东《关心群众生活，注意工作方法》' },
+  { text: '干就是学习。', source: '毛泽东《中国革命战争的战略问题》' },
+  { text: '不同质的矛盾，只有用不同质的方法才能解决。', source: '毛泽东《矛盾论》' },
+  { text: '过程变化，旧过程和旧矛盾消灭，新过程和新矛盾发生。', source: '毛泽东《矛盾论》' },
+  { text: '用不同的方法去解决不同的矛盾。', source: '毛泽东《矛盾论》' },
+  { text: '一切过程都有始有终。', source: '毛泽东《矛盾论》' },
+  { text: '星星之火，可以燎原。', source: '毛泽东《星星之火，可以燎原》（引语）' },
 ] as const
 
-export const quotes: readonly string[] = [
+export const quotes: readonly (string | null)[] = [
   ...englishQuotes,
-  ...chineseQuotes.map((quote) => quote.text),
+  ...chineseQuotes.map((quote) => quote?.text ?? null),
 ]
 
 export function quoteSource(id: number): string | undefined {
   return chineseQuotes[id - englishQuotes.length]?.source
+}
+
+export function isActiveQuote(id: number): boolean {
+  return Number.isInteger(id) && id >= 0 && id < quotes.length && quotes[id] !== null
 }
 
 export function quoteForDate(date: string, rejectedIds: number[]) {
@@ -263,7 +275,8 @@ export function quoteForDate(date: string, rejectedIds: number[]) {
     const firstIndex = ((dayInLanguage * 37) % length + length) % length
     for (let offset = 0; offset < length; offset++) {
       const id = start + (firstIndex + offset) % length
-      if (!rejected.has(id)) return { id, text: quotes[id], source: quoteSource(id) }
+      const text = quotes[id]
+      if (!rejected.has(id) && text) return { id, text, source: quoteSource(id) }
     }
   }
   return null

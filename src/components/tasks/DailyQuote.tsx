@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Bookmark, Check, X } from 'lucide-react'
-import { quoteForDate, quoteSource, quotes } from '../../lib/quotes'
+import { isActiveQuote, quoteForDate, quoteSource, quotes } from '../../lib/quotes'
 import { useQuotesStore } from '../../store/quotes'
 
 interface Props {
@@ -16,6 +16,7 @@ export function DailyQuote({ date }: Props) {
   }
 
   const quote = quoteForDate(date, rejectedIds)
+  const activeKeptIds = keptIds.filter(isActiveQuote)
   const showChoices = quote && decidedOn !== date && !keptIds.includes(quote.id)
 
   return (
@@ -24,14 +25,14 @@ export function DailyQuote({ date }: Props) {
         <div className="flex items-center justify-between gap-2 min-h-8">
           <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#1e3a5f]/65">Today's quote</p>
           <div className="flex items-center gap-1">
-            {keptIds.length > 0 && (
+            {activeKeptIds.length > 0 && (
               <button
                 type="button"
                 onClick={() => setShowSaved(true)}
-                aria-label={`View ${keptIds.length} kept quotes`}
+                aria-label={`View ${activeKeptIds.length} kept quotes`}
                 className="min-w-8 h-8 px-1 flex items-center justify-center gap-0.5 text-[#1e3a5f]"
               >
-                <Bookmark size={15} /> <span className="text-[11px]">{keptIds.length}</span>
+                <Bookmark size={15} /> <span className="text-[11px]">{activeKeptIds.length}</span>
               </button>
             )}
             {showChoices && (
@@ -77,16 +78,16 @@ export function DailyQuote({ date }: Props) {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-4 border-b border-stone-100">
-              <h2 className="text-[17px] font-semibold text-stone-900">Kept quotes ({keptIds.length})</h2>
+              <h2 className="text-[17px] font-semibold text-stone-900">Kept quotes ({activeKeptIds.length})</h2>
               <button type="button" onClick={() => setShowSaved(false)} aria-label="Close kept quotes" className="p-2 text-stone-500">
                 <X size={20} />
               </button>
             </div>
             <div className="overflow-y-auto px-4 py-2 safe-bottom">
-              {keptIds.length === 0 ? (
+              {activeKeptIds.length === 0 ? (
                 <p className="py-5 text-[14px] text-stone-500">No quotes kept yet.</p>
               ) : (
-                keptIds.map((id) => (
+                activeKeptIds.map((id) => (
                   <div key={id} className="flex items-start gap-3 py-3 border-b border-stone-100">
                     <div className="flex-1 min-w-0">
                       <p className="text-[14px] leading-relaxed text-stone-800">“{quotes[id]}”</p>
