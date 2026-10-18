@@ -65,14 +65,14 @@ function App() {
       <main className="flex-1 overflow-hidden flex flex-col">
         {recoveryFlow ? <CloudPage recoveryFlow /> : (
           <>
-            {activeTab === 'tasks' && <TasksPage />}
+            {(activeTab === 'tasks' || activeTab === 'allTasks') && <TasksPage allTasksPage={activeTab === 'allTasks'} />}
             {activeTab === 'targets' && <TargetsPage />}
             {activeTab === 'gym' && <GymPage />}
             {activeTab === 'cloud' && <CloudPage />}
           </>
         )}
       </main>
-      {!recoveryFlow && activeTab !== 'cloud' && <TabBar />}
+      {!recoveryFlow && activeTab !== 'cloud' && activeTab !== 'allTasks' && <TabBar />}
       {!recoveryFlow && userId && cloudMode === 'connecting' && (
         <div className="fixed inset-0 z-40 bg-white/75 flex items-center justify-center" role="status" aria-live="polite">
           <div className="bg-white border border-stone-100 rounded-2xl px-6 py-5 shadow-lg text-[14px] text-[#1e3a5f]">

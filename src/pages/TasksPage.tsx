@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { ChevronDown, Cloud, Plus, RefreshCw, Repeat2, Search, Trash2, X } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronRight, Cloud, Plus, RefreshCw, Repeat2, Search, Trash2, X } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -19,19 +19,23 @@ import { TaskForm } from '../components/tasks/TaskForm'
 import { DailyQuote } from '../components/tasks/DailyQuote'
 import type { Task } from '../store/types'
 
-type ViewMode = 'today' | 'all'
-
-export function TasksPage() {
+export function TasksPage({ allTasksPage = false }: { allTasksPage?: boolean }) {
   const { tasks, overrides, orderedTaskIds, reorder, hasHydrated, purgeOldCompleted, deleteTask } = useTasksStore()
   const [showForm, setShowForm] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
-  const [viewMode, setViewMode] = useState<ViewMode>('today')
+  const viewMode = allTasksPage ? 'all' : 'today'
   const [search, setSearch] = useState('')
   const [today, setToday] = useState(() => localToday())
   const [spinning, setSpinning] = useState(false)
   const [completedOpen, setCompletedOpen] = useState(false)
   const [repeatingOpen, setRepeatingOpen] = useState(false)
   const setTab = useAppStore(s => s.setTab)
+
+  const openAllTasks = () => {
+    setSearch('')
+    setRepeatingOpen(false)
+    setTab('allTasks')
+  }
 
   useEffect(() => {
     const updateDate = () => {
@@ -158,11 +162,24 @@ export function TasksPage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Sticky header */}
-      <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 pt-3 pb-0 z-10">
-        <div className="flex items-center justify-between mb-2.5">
-          <div>
-            <p className="text-[13px] text-stone-400">{displayDate}</p>
-            {viewMode === 'today' ? (
+      <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 z-10">
+        {allTasksPage ? (
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => setTab('tasks')} aria-label="Back to Today" className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full text-[#1e3a5f] hover:bg-stone-100">
+              <ArrowLeft size={20} />
+            </button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-[18px] font-semibold text-stone-900">All Tasks</h1>
+              <p className="text-[12px] text-stone-500">{matchingTasks.length} task{matchingTasks.length !== 1 ? 's' : ''} shown</p>
+            </div>
+            <button type="button" onClick={() => setShowForm(true)} aria-label="Add task" className="w-10 h-10 flex-shrink-0 bg-[#1e3a5f] rounded-full flex items-center justify-center text-white">
+              <Plus size={20} strokeWidth={2.5} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[13px] text-stone-400">{displayDate}</p>
               <p className="text-[15px] font-semibold text-stone-900">
                 {completed.length}/{todaysTasks.length} done
                 {todaysTasks.length > 0 && (
@@ -171,58 +188,20 @@ export function TasksPage() {
                   </span>
                 )}
               </p>
-            ) : (
-              <p className="text-[15px] font-semibold text-stone-900">
-                {matchingTasks.length} task{matchingTasks.length !== 1 ? 's' : ''} shown
-              </p>
-            )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setTab('cloud')} className="w-9 h-9 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100" aria-label="Open cloud and account" title="Cloud and account">
+                <Cloud size={18} />
+              </button>
+              <button type="button" onClick={refresh} className="w-9 h-9 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors" aria-label="Refresh date">
+                <RefreshCw size={17} className={spinning ? 'animate-spin' : ''} />
+              </button>
+              <button type="button" onClick={() => setShowForm(true)} className="w-9 h-9 bg-[#1e3a5f] rounded-full flex items-center justify-center text-white" aria-label="Add task">
+                <Plus size={20} strokeWidth={2.5} />
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setTab('cloud')}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100"
-              aria-label="Open cloud and account"
-              title="Cloud and account"
-            >
-              <Cloud size={18} />
-            </button>
-            {/* Refresh button */}
-            <button
-              onClick={refresh}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
-              title="Refresh date"
-            >
-              <RefreshCw size={17} className={spinning ? 'animate-spin' : ''} />
-            </button>
-            {/* Add button */}
-            <button
-              onClick={() => setShowForm(true)}
-              className="w-9 h-9 bg-[#1e3a5f] rounded-full flex items-center justify-center text-white"
-            >
-              <Plus size={20} strokeWidth={2.5} />
-            </button>
-          </div>
-        </div>
-
-        {/* Large view switch stays visible while the task list scrolls. */}
-        <div className="flex gap-1 rounded-xl bg-stone-100 p-1 mb-3" role="tablist" aria-label="Task views">
-          {(['today', 'all'] as ViewMode[]).map(mode => (
-            <button
-              key={mode}
-              type="button"
-              role="tab"
-              aria-selected={viewMode === mode}
-              onClick={() => setViewMode(mode)}
-              className={`flex-1 min-h-11 rounded-lg text-[14px] font-medium transition-colors ${
-                viewMode === mode
-                  ? 'bg-white text-[#1e3a5f] shadow-sm'
-                  : 'text-stone-500'
-              }`}
-            >
-              {mode === 'today' ? `Today · ${remaining.length}` : `All Tasks · ${allTasks.length}`}
-            </button>
-          ))}
-        </div>
+        )}
       </div>
 
       {/* Task list */}
@@ -230,6 +209,13 @@ export function TasksPage() {
         {viewMode === 'today' ? (
           <>
             <DailyQuote date={today} />
+            <div className="flex items-center justify-between pt-1">
+              <h2 className="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Today</h2>
+              <button type="button" onClick={openAllTasks} className="min-h-10 flex items-center gap-1 text-[13px] font-medium text-[#1e3a5f]" aria-label={`Open All Tasks, ${allTasks.length} tasks`}>
+                All tasks · {allTasks.length}
+                <ChevronRight size={17} />
+              </button>
+            </div>
             {todaysTasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 text-center">
                 <div className="text-4xl mb-3">✓</div>
