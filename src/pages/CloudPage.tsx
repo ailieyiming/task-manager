@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase'
 export function CloudPage({ recoveryFlow = false }: { recoveryFlow?: boolean }) {
   const { userId, email: signedInEmail, mode, message, lastSynced } = useCloudStore()
   const setTab = useAppStore(s => s.setTab)
+  const returnTab = useAppStore(s => s.returnTab)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -117,7 +118,7 @@ export function CloudPage({ recoveryFlow = false }: { recoveryFlow?: boolean }) 
   return (
     <div className="flex-1 overflow-y-auto bg-stone-50">
       <div className="bg-white border-b border-stone-100 px-4 py-4 flex items-center gap-3">
-        <button type="button" onClick={() => setTab('tasks')} aria-label="Back to tasks" className="w-9 h-9 flex items-center justify-center rounded-full text-[#1e3a5f] hover:bg-stone-100">
+        <button type="button" onClick={() => setTab(returnTab)} aria-label="Back to app" className="w-9 h-9 flex items-center justify-center rounded-full text-[#1e3a5f] hover:bg-stone-100">
           <ArrowLeft size={19} />
         </button>
         <div>
@@ -180,7 +181,7 @@ export function CloudPage({ recoveryFlow = false }: { recoveryFlow?: boolean }) 
         {!userId && !resetMode && (
           <form onSubmit={(event: FormEvent) => { event.preventDefault(); void authenticate('sign-in') }} className="bg-white border border-stone-100 rounded-2xl p-5 space-y-3 shadow-sm">
             <p className="text-[15px] font-semibold text-stone-900">Sign in or create an account</p>
-            <p className="text-[12px] text-stone-500">Use the same account on each device. Your existing data stays on this device until cloud upload succeeds.</p>
+            <p className="text-[12px] text-stone-500">Sign in on the phone with your Gym records. Existing check-ins will upload, and later check-ins will sync automatically. Your local data stays here until upload succeeds.</p>
             <input type="email" required autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="Email" className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-[15px] outline-none focus:border-[#1e3a5f]" />
             <input type="password" required minLength={6} autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} placeholder="Password (at least 6 characters)" className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-[15px] outline-none focus:border-[#1e3a5f]" />
             {notice && <p className="text-[13px] text-stone-600" role="status">{notice}</p>}
