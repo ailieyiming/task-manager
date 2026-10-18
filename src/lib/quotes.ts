@@ -357,6 +357,39 @@ const freshEnglishQuotes = [
   'I am building a life that feels steady, healthy, and free.',
 ] as const
 
+// Verified source quotations. Append only: older saved quote IDs must not move.
+const sourcedEnglishQuotes = [
+  { text: '“Hope” is the thing with feathers.', source: 'Emily Dickinson, “Hope”', url: 'https://www.poetryfoundation.org/poems/42889/hope-is-the-thing-with-feathers-314' },
+  { text: 'I am the master of my fate.', source: 'William Ernest Henley, “Invictus”', url: 'https://www.poetryfoundation.org/poems/51642/invictus' },
+  { text: 'I am the captain of my soul.', source: 'William Ernest Henley, “Invictus”', url: 'https://www.poetryfoundation.org/poems/51642/invictus' },
+  { text: 'If you can wait and not be tired by waiting.', source: 'Rudyard Kipling, “If—”', url: 'https://www.poetryfoundation.org/poems/46473/if---' },
+  { text: 'If you can meet with Triumph and Disaster.', source: 'Rudyard Kipling, “If—”', url: 'https://www.poetryfoundation.org/poems/46473/if---' },
+  { text: 'Hold fast to dreams.', source: 'Langston Hughes, “Dreams”', url: 'https://www.poetryfoundation.org/poems/150995/dreams-5d767850da976' },
+  { text: 'Our doubts are traitors.', source: 'William Shakespeare, “Measure for Measure”', url: 'https://shakespeare.mit.edu/measure/measure.1.4.html' },
+  { text: 'Sweet are the uses of adversity.', source: 'William Shakespeare, “As You Like It”', url: 'https://shakespeare.mit.edu/asyoulikeit/asyoulikeit.2.1.html' },
+  { text: 'We are all in the gutter, but some of us are looking at the stars.', source: 'Oscar Wilde, “Lady Windermere’s Fan”', url: 'https://www.gutenberg.org/cache/epub/790/pg790-images.html' },
+  { text: 'We must accept the finite disappointment, but in spite of this we must maintain the infinite hope.', source: 'Martin Luther King Jr., “Shattered Dreams”', url: 'https://kinginstitute.stanford.edu/king-papers/documents/draft-chapter-x-shattered-dreams' },
+  { text: 'Stay hungry. Stay foolish.', source: 'The Whole Earth Catalog, cited by Steve Jobs', url: 'https://news.stanford.edu/stories/2005/06/youve-got-find-love-jobs-says' },
+  { text: 'Your time is limited, so don’t waste it living someone else’s life.', source: 'Steve Jobs, Stanford commencement address', url: 'https://news.stanford.edu/stories/2005/06/youve-got-find-love-jobs-says' },
+  { text: 'Optimism is the faith that leads to achievement.', source: 'Helen Keller, “Optimism”', url: 'https://www.afb.org/about-afb/history/helen-keller/books-essays-speeches/optimism-1903' },
+  { text: 'Trust thyself: every heart vibrates to that iron string.', source: 'Ralph Waldo Emerson, “Self-Reliance”', url: 'https://www.gutenberg.org/cache/epub/16643/pg16643-images.html' },
+  { text: 'Our life is frittered away by detail.', source: 'Henry David Thoreau, “Walden”', url: 'https://www.gutenberg.org/files/205/205-h/205-h.htm' },
+  { text: 'Simplify, simplify.', source: 'Henry David Thoreau, “Walden”', url: 'https://www.gutenberg.org/files/205/205-h/205-h.htm' },
+  { text: 'Your pain is the breaking of the shell that encloses your understanding.', source: 'Kahlil Gibran, “The Prophet”', url: 'https://www.gutenberg.org/cache/epub/58585/pg58585-images.html' },
+  { text: 'And this, too, shall pass away.', source: 'Traditional saying, cited by Abraham Lincoln', url: 'https://en.wikisource.org/wiki/Page:Life_and_Works_of_Abraham_Lincoln,_v5.djvu/309' },
+  { text: 'The universe has your back.', source: 'Gabrielle Bernstein, “The Universe Has Your Back”', url: 'https://gabbybernstein.com/the-universe-has-your-back/' },
+  { text: 'Give yourself permission to stop forcing and start allowing.', source: 'Gabrielle Bernstein, “There Is a Spiritual Solution to Every Problem”', url: 'https://gabbybernstein.com/podcast/there-is-a-spiritual-solution-to-every-problem/' },
+] as const
+
+const allianceQuotes = [
+  { text: '安民之本，在于择交。', source: '《战国策·赵二·苏秦从燕之赵始合从》', meaning: '选择可靠的伙伴，才能把事情做稳。', url: 'https://zh.wikisource.org/zh/戰國策_(士禮居叢書本)/趙/二' },
+  { text: '择交而得则民安。', source: '《战国策·赵二·苏秦从燕之赵始合从》', meaning: '合作对象选得对，局面才容易稳定。', url: 'https://zh.wikisource.org/zh/戰國策_(士禮居叢書本)/趙/二' },
+  { text: '此三策者，不可不熟计也。', source: '《战国策·赵二·苏秦从燕之赵始合从》', meaning: '重要选择要把几种方案都想清楚。', url: 'https://zh.wikisource.org/zh/戰國策_(士禮居叢書本)/趙/二' },
+  { text: '六国并力为一。', source: '《战国策·赵二·苏秦从燕之赵始合从》', meaning: '有共同目标时，分散的力量可以联合。', url: 'https://zh.wikisource.org/zh/戰國策_(士禮居叢書本)/趙/二' },
+  { text: '大王之地有尽，而秦之求无已。', source: '《战国策·韩一·苏秦为楚合从说韩王》', meaning: '资源有限时，要看清没有止境的要求，并守住边界。', url: 'https://zh.wikisource.org/zh-hant/戰國策_(士禮居叢書本)/韓/一' },
+  { text: '宁为鸡口，无为牛后。', source: '《战国策·韩一·苏秦为楚合从说韩王》', meaning: '与其失去自主权，不如守住自己的选择。', url: 'https://zh.wikisource.org/zh-hant/戰國策_(士禮居叢書本)/韓/一' },
+] as const
+
 const classicMeanings: Record<number, string> = {
   105: '先看清自己和对方，再决定怎么行动。',
   106: '先做好准备，再争取结果。',
@@ -400,6 +433,8 @@ const classicMeanings: Record<number, string> = {
 const legacyQuoteCount = englishQuotes.length + chineseQuotes.length
 const newChineseStart = legacyQuoteCount + newEnglishQuotes.length
 const freshEnglishStart = newChineseStart + newChineseQuotes.length
+const sourcedEnglishStart = freshEnglishStart + freshEnglishQuotes.length
+const allianceStart = sourcedEnglishStart + sourcedEnglishQuotes.length
 
 export const quotes: readonly (string | null)[] = [
   ...englishQuotes,
@@ -407,15 +442,26 @@ export const quotes: readonly (string | null)[] = [
   ...newEnglishQuotes,
   ...newChineseQuotes.map((quote) => quote.text),
   ...freshEnglishQuotes,
+  ...sourcedEnglishQuotes.map((quote) => quote.text),
+  ...allianceQuotes.map((quote) => quote.text),
 ]
 
 export function quoteSource(id: number): string | undefined {
   if (id < legacyQuoteCount) return chineseQuotes[id - englishQuotes.length]?.source
+  if (id >= sourcedEnglishStart && id < allianceStart) return sourcedEnglishQuotes[id - sourcedEnglishStart]?.source
+  if (id >= allianceStart) return allianceQuotes[id - allianceStart]?.source
   return newChineseQuotes[id - newChineseStart]?.source
 }
 
 export function quoteMeaning(id: number): string | undefined {
+  if (id >= allianceStart) return allianceQuotes[id - allianceStart]?.meaning
   return classicMeanings[id] ?? newChineseQuotes[id - newChineseStart]?.meaning
+}
+
+export function quoteSourceUrl(id: number): string | undefined {
+  if (id >= sourcedEnglishStart && id < allianceStart) return sourcedEnglishQuotes[id - sourcedEnglishStart]?.url
+  if (id >= allianceStart) return allianceQuotes[id - allianceStart]?.url
+  return undefined
 }
 
 export function isActiveQuote(id: number): boolean {
@@ -423,24 +469,25 @@ export function isActiveQuote(id: number): boolean {
 }
 
 const maoIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('毛泽东') ? [id] : [])
-const classicIds = quotes.flatMap((text, id) =>
-  text && quoteSource(id) && !quoteSource(id)?.startsWith('毛泽东') && quoteMeaning(id) ? [id] : [])
-const englishIds = [
-  ...newEnglishQuotes.map((_, index) => legacyQuoteCount + index),
-  ...freshEnglishQuotes.map((_, index) => freshEnglishStart + index),
-]
+const sunziIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('《孙子兵法') ? [id] : [])
+const englishIds = sourcedEnglishQuotes.map((_, index) => sourcedEnglishStart + index)
+const allianceIds = allianceQuotes.map((_, index) => allianceStart + index)
+const liBaiIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('李白') ? [id] : [])
 const allActiveIds = quotes.flatMap((text, id) => text ? [id] : [])
 const scheduleStart = Math.floor(Date.UTC(2025, 0, 1) / 86_400_000)
 const noRepeatDays = 60
+// Each rolling 20-day cycle has exactly 10 Mao, 5 English, 3 Sunzi,
+// 1 alliance, and 1 Li Bai quote.
+const categoryCycle = [
+  'mao', 'english', 'mao', 'sunzi', 'mao', 'english', 'mao', 'alliance',
+  'mao', 'sunzi', 'english', 'mao', 'mao', 'liBai', 'english', 'mao',
+  'sunzi', 'mao', 'english', 'mao',
+] as const
+const categoryPools = { mao: maoIds, english: englishIds, sunzi: sunziIds, alliance: allianceIds, liBai: liBaiIds }
 
 function quoteIdForDay(dayNumber: number, rejected: Set<number>, recent: Set<number>): number | null {
-  const weekday = new Date(dayNumber * 86_400_000).getUTCDay()
-  // Three Mao days, two English days, and two classical days each week.
-  const pools = weekday === 1 || weekday === 3 || weekday === 6
-    ? [maoIds, classicIds, englishIds]
-    : weekday === 2 || weekday === 5
-      ? [englishIds, maoIds, classicIds]
-      : [classicIds, maoIds, englishIds]
+  const category = categoryCycle[((dayNumber - scheduleStart) % categoryCycle.length + categoryCycle.length) % categoryCycle.length]
+  const pools = [categoryPools[category]]
   for (const pool of [...pools, allActiveIds]) {
     if (pool.length === 0) continue
     const firstIndex = (Math.imul(dayNumber, 2654435761) >>> 0) % pool.length

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Bookmark, Check, X } from 'lucide-react'
-import { isActiveQuote, quoteForDate, quoteMeaning, quoteSource, quotes } from '../../lib/quotes'
+import { isActiveQuote, quoteForDate, quoteMeaning, quoteSource, quoteSourceUrl, quotes } from '../../lib/quotes'
 import { useQuotesStore } from '../../store/quotes'
 
 interface Props {
@@ -62,7 +62,7 @@ export function DailyQuote({ date }: Props) {
           <>
             <p className="text-[14px] leading-5 font-medium text-[#1e3a5f]">“{quote.text}”</p>
             {quote.meaning && <p className="mt-1 text-[12px] leading-5 text-stone-600">{quote.meaning}</p>}
-            {quote.source && <p className="mt-0.5 text-[10px] text-stone-500 truncate" title={quote.source}>— {quote.source}</p>}
+            {quote.source && <p className="mt-0.5 text-[10px] text-stone-500 truncate" title={quote.source}>— {quoteSourceUrl(quote.id) ? <a href={quoteSourceUrl(quote.id)} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{quote.source}</a> : quote.source}</p>}
           </>
         ) : (
           <p className="text-[12px] text-stone-600">You've removed all the quotes.</p>
@@ -93,7 +93,7 @@ export function DailyQuote({ date }: Props) {
                     <div className="flex-1 min-w-0">
                       <p className="text-[14px] leading-relaxed text-stone-800">“{quotes[id]}”</p>
                       {quoteMeaning(id) && <p className="text-[12px] leading-relaxed text-stone-500 mt-1">{quoteMeaning(id)}</p>}
-                      {quoteSource(id) && <p className="text-[11px] text-stone-500 mt-0.5">— {quoteSource(id)}</p>}
+                      {quoteSource(id) && <p className="text-[11px] text-stone-500 mt-0.5">— {quoteSourceUrl(id) ? <a href={quoteSourceUrl(id)} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{quoteSource(id)}</a> : quoteSource(id)}</p>}
                     </div>
                     <button
                       type="button"
