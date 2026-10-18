@@ -138,7 +138,7 @@ export function CloudPage({ recoveryFlow = false }: { recoveryFlow?: boolean }) 
             </p>
           </div>
           <p className="text-[13px] text-stone-500">
-            {message ?? (mode === 'synced' ? 'Tasks, targets, gym check-ins and quote choices are saved to Supabase.'
+            {message ?? (mode === 'synced' ? 'Tasks, targets and quote choices are saved to Supabase. Gym check-ins sync without sign-in.'
               : 'Sign in to back up your data and use it on another device.')}
           </p>
           {signedInEmail && <p className="text-[12px] text-stone-400 mt-2">{signedInEmail}</p>}
@@ -181,7 +181,7 @@ export function CloudPage({ recoveryFlow = false }: { recoveryFlow?: boolean }) 
         {!userId && !resetMode && (
           <form onSubmit={(event: FormEvent) => { event.preventDefault(); void authenticate('sign-in') }} className="bg-white border border-stone-100 rounded-2xl p-5 space-y-3 shadow-sm">
             <p className="text-[15px] font-semibold text-stone-900">Sign in or create an account</p>
-            <p className="text-[12px] text-stone-500">Sign in on the phone with your Gym records. Existing check-ins will upload, and later check-ins will sync automatically. Your local data stays here until upload succeeds.</p>
+            <p className="text-[12px] text-stone-500">Sign in to sync tasks, targets and quote choices. Gym check-ins sync without an account.</p>
             <input type="email" required autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="Email" className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-[15px] outline-none focus:border-[#1e3a5f]" />
             <input type="password" required minLength={6} autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} placeholder="Password (at least 6 characters)" className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-[15px] outline-none focus:border-[#1e3a5f]" />
             {notice && <p className="text-[13px] text-stone-600" role="status">{notice}</p>}

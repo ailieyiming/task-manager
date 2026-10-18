@@ -2,7 +2,6 @@ import { get as idbGet, set as idbSet } from 'idb-keyval'
 import { useTasksStore } from '../store/tasks'
 import { useTargetsStore } from '../store/targets'
 import { useQuotesStore } from '../store/quotes'
-import { useGymStore } from '../store/gym'
 import { useCloudStore } from '../store/cloud'
 import { supabase } from './supabase'
 import { hasRecords, normalizeAppData, stableStringify, type AppData } from './cloudData'
@@ -36,7 +35,6 @@ function snapshot(): AppData {
   const tasks = useTasksStore.getState()
   const targets = useTargetsStore.getState()
   const quotes = useQuotesStore.getState()
-  const gym = useGymStore.getState()
   return {
     tasks: tasks.tasks,
     overrides: tasks.overrides,
@@ -47,7 +45,7 @@ function snapshot(): AppData {
     keptIds: quotes.keptIds,
     rejectedIds: quotes.rejectedIds,
     decidedOn: quotes.decidedOn,
-    gymCheckIns: gym.checkIns,
+    gymCheckIns: {},
   }
 }
 
@@ -93,7 +91,6 @@ async function applyCloud(data: AppData) {
   })
   useTargetsStore.setState({ targets: data.targets, orderedTargetIds: data.orderedTargetIds })
   useQuotesStore.setState({ keptIds: data.keptIds, rejectedIds: data.rejectedIds, decidedOn: data.decidedOn })
-  useGymStore.setState({ checkIns: data.gymCheckIns ?? {} })
 
   // Explicitly finish the local cache writes before recording a synced revision.
   await idbSet('task-manager-tasks', JSON.stringify({ state: {
@@ -112,9 +109,6 @@ async function applyCloud(data: AppData) {
     keptIds: data.keptIds,
     rejectedIds: data.rejectedIds,
     decidedOn: data.decidedOn,
-  }, version: 0 }))
-  await idbSet('task-manager-gym', JSON.stringify({ state: {
-    checkIns: data.gymCheckIns ?? {},
   }, version: 0 }))
 }
 
@@ -196,7 +190,6 @@ class SyncController {
       useTasksStore.subscribe(onChange),
       useTargetsStore.subscribe(onChange),
       useQuotesStore.subscribe(onChange),
-      useGymStore.subscribe(onChange),
     ]
     this.interval = setInterval(() => { void this.refresh() }, 60_000)
     document.addEventListener('visibilitychange', this.onVisible)

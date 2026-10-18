@@ -12,6 +12,7 @@ import { useGymStore } from './store/gym'
 import { useCloudStore } from './store/cloud'
 import { supabase } from './lib/supabase'
 import { startCloudSync } from './lib/cloudSync'
+import { startGymSync } from './lib/gymSync'
 
 function App() {
   const [recoveryFlow] = useState(() => new URLSearchParams(window.location.search).has('recover'))
@@ -47,9 +48,14 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (recoveryFlow || !userId || !tasksHydrated || !targetsHydrated || !quotesHydrated || !gymHydrated) return
+    if (recoveryFlow || !userId || !tasksHydrated || !targetsHydrated || !quotesHydrated) return
     return startCloudSync(userId)
-  }, [recoveryFlow, userId, tasksHydrated, targetsHydrated, quotesHydrated, gymHydrated])
+  }, [recoveryFlow, userId, tasksHydrated, targetsHydrated, quotesHydrated])
+
+  useEffect(() => {
+    if (recoveryFlow || !gymHydrated) return
+    return startGymSync()
+  }, [recoveryFlow, gymHydrated])
 
   // Re-run purge whenever the user returns to the app (tab/PWA visibility)
   useEffect(() => {

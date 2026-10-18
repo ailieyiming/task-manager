@@ -3,8 +3,7 @@ import { ChevronLeft, ChevronRight, Cloud, CloudOff, Dumbbell, RefreshCw } from 
 import { formatDate, formatDisplay, localToday, parseLocalDate } from '../lib/date'
 import { canCheckIn, GYM_END, GYM_START, gymYearStats, type GymStatus } from '../lib/gym'
 import { useGymStore } from '../store/gym'
-import { useCloudStore } from '../store/cloud'
-import { useAppStore } from '../store/app'
+import { refreshGymSync } from '../lib/gymSync'
 
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const choices: { status: GymStatus; label: string; active: string }[] = [
@@ -19,9 +18,7 @@ const monthOf = (date: string) => {
 }
 
 export function GymPage() {
-  const { checkIns, hasHydrated, setCheckIn, clearCheckIn } = useGymStore()
-  const { userId, mode } = useCloudStore()
-  const setTab = useAppStore(s => s.setTab)
+  const { checkIns, hasHydrated, syncMode, setCheckIn, clearCheckIn } = useGymStore()
   const [today, setToday] = useState(localToday)
   const initialDate = today < GYM_START ? GYM_START : today > GYM_END ? GYM_END : today
   const [month, setMonth] = useState(() => monthOf(initialDate))
@@ -43,15 +40,11 @@ export function GymPage() {
   const monthKey = formatDate(month).slice(0, 7)
   const previousAllowed = monthKey > GYM_START.slice(0, 7)
   const nextAllowed = monthKey < GYM_END.slice(0, 7)
-  const cloudStatus = mode === 'synced'
-    ? 'Cloud sync is on. Past and new check-ins are included.'
-    : mode === 'connecting'
-      ? 'Connecting to cloud…'
-      : mode === 'conflict'
-        ? 'Choose which data to keep before gym check-ins can sync.'
-        : userId
-          ? 'Cloud sync is offline. Check-ins remain on this device.'
-          : 'On this device only. Sign in to upload past and future check-ins.'
+  const cloudStatus = syncMode === 'synced'
+    ? 'Gym records sync with Supabase. No sign-in needed.'
+    : syncMode === 'connecting'
+      ? 'Connecting Gym to Supabase…'
+      : 'Gym sync is offline. Changes stay on this device until it reconnects.'
 
   const moveMonth = (delta: number) => {
     const next = new Date(month.getFullYear(), month.getMonth() + delta, 1)
@@ -74,17 +67,17 @@ export function GymPage() {
           <p className="text-[13px] text-stone-400">5 Oct 2026 – 4 Oct 2027</p>
           <h1 className="text-[18px] font-semibold text-stone-900">Gym</h1>
         </div>
-        <button onClick={() => setToday(localToday())} aria-label="Refresh date" className="w-10 h-10 flex items-center justify-center rounded-full text-[#1e3a5f] hover:bg-stone-100">
+        <button onClick={() => { setToday(localToday()); void refreshGymSync() }} aria-label="Refresh date and gym records" className="w-10 h-10 flex items-center justify-center rounded-full text-[#1e3a5f] hover:bg-stone-100">
           <RefreshCw size={18} />
         </button>
       </div>
 
       <div className="px-4 py-4 space-y-4">
-        <button type="button" onClick={() => setTab('cloud')} className="w-full flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-left" aria-label="Open gym cloud sync">
-          {mode === 'synced' ? <Cloud size={18} className="flex-shrink-0 text-[#1a4731]" /> : <CloudOff size={18} className="flex-shrink-0 text-stone-400" />}
+        <div className="w-full flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-3 py-2.5" role="status">
+          {syncMode === 'synced' ? <Cloud size={18} className="flex-shrink-0 text-[#1a4731]" /> : <CloudOff size={18} className="flex-shrink-0 text-stone-400" />}
           <span className="flex-1 text-[12px] leading-4 text-stone-600">{cloudStatus}</span>
-          <ChevronRight size={16} className="flex-shrink-0 text-stone-400" />
-        </button>
+          {syncMode === 'offline' && <button type="button" onClick={() => void refreshGymSync()} className="text-[12px] font-medium text-[#1e3a5f]">Retry</button>}
+        </div>
         <section className="rounded-2xl bg-[#1e3a5f] text-white p-5 shadow-sm">
           <div className="flex items-center gap-2 text-[13px] text-white/75"><Dumbbell size={16} /> One year of movement</div>
           <p className="text-[23px] font-semibold mt-2">{stats.finished ? 'Your year in review' : today < GYM_START ? 'Starts 5 October' : `Day ${stats.elapsed} of ${stats.total}`}</p>
