@@ -51,6 +51,25 @@ function snapshot(): AppData {
   }
 }
 
+// A manually seeded gym history must not replace tasks stored only on the phone.
+function isGymOnlySeed(data: AppData): boolean {
+  return data.tasks.length === 0 && data.overrides.length === 0 &&
+    data.orderedTaskIds.length === 0 &&
+    Object.keys(data.cumulativeCompleted).length === 0 &&
+    data.targets.length === 0 && data.orderedTargetIds.length === 0 &&
+    data.keptIds.length === 0 && data.rejectedIds.length === 0 &&
+    data.decidedOn === null && Object.keys(data.gymCheckIns).length > 0
+}
+
+function mergeGymSeed(local: AppData, remote: AppData): AppData | null {
+  if (!isGymOnlySeed(remote)) return null
+  const conflictingDate = Object.entries(remote.gymCheckIns).some(
+    ([date, status]) => local.gymCheckIns[date] && local.gymCheckIns[date] !== status,
+  )
+  if (conflictingDate) return null
+  return { ...local, gymCheckIns: { ...remote.gymCheckIns, ...local.gymCheckIns } }
+}
+
 function validData(value: unknown): value is AppData {
   if (!value || typeof value !== 'object') return false
   const data = value as Partial<AppData>
@@ -225,7 +244,15 @@ class SyncController {
           await this.remember(local, this.remote)
         }
       } else if (hasRecords(local)) {
-        this.status('conflict', 'This device and the cloud both contain data. Choose which copy to keep.')
+        const merged = mergeGymSeed(local, this.remote.data)
+        if (merged) {
+          this.applying = true
+          await applyCloud(merged)
+          this.applying = false
+          await this.update(merged, this.remote.revision)
+        } else {
+          this.status('conflict', 'This device and the cloud both contain data. Choose which copy to keep.')
+        }
       } else {
         this.applying = true
         await applyCloud(this.remote.data)
