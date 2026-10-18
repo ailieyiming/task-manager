@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { isActiveQuote, quoteForDate, quoteSource, quotes } from '../src/lib/quotes'
+import { isActiveQuote, quoteForDate, quoteMeaning, quoteSource, quotes } from '../src/lib/quotes'
 
 describe('daily quote catalog', () => {
   it('retains existing IDs while removing every retired entry', () => {
@@ -9,14 +9,34 @@ describe('daily quote catalog', () => {
     expect(isActiveQuote(100)).toBe(false)
     expect(isActiveQuote(120)).toBe(false)
     expect(quoteSource(120)).toBeUndefined()
-    expect(quotes.filter(Boolean)).toHaveLength(220)
+    expect(quotes.filter(Boolean)).toHaveLength(257)
   })
 
-  it('keeps 120 Chinese quotes with Mao as the largest source group', () => {
+  it('keeps the original catalog and adds Li Bai and Mao poetry', () => {
     const sources = quotes.map((quote, id) => quote ? quoteSource(id) : undefined).filter(Boolean)
-    expect(sources).toHaveLength(120)
-    expect(sources.filter(source => source?.startsWith('毛泽东'))).toHaveLength(50)
+    expect(sources).toHaveLength(133)
+    expect(sources.filter(source => source?.startsWith('毛泽东'))).toHaveLength(56)
+    expect(sources.some(source => source?.startsWith('李白'))).toBe(true)
     expect(sources.every(source => !source?.includes('道德经'))).toBe(true)
+  })
+
+  it('shows Mao three days each week and explains every displayed classical quote', () => {
+    for (let week = 0; week < 52; week++) {
+      let maoDays = 0
+      let englishDays = 0
+      let classicDays = 0
+      for (let day = 0; day < 7; day++) {
+        const date = new Date(Date.UTC(2026, 0, 5 + week * 7 + day)).toISOString().slice(0, 10)
+        const quote = quoteForDate(date, [])!
+        if (quote.source?.startsWith('毛泽东')) maoDays++
+        else if (!quote.source) englishDays++
+        else {
+          classicDays++
+          expect(quoteMeaning(quote.id)).toBeTruthy()
+        }
+      }
+      expect([maoDays, englishDays, classicDays]).toEqual([3, 2, 2])
+    }
   })
 
   it('never offers a retired quote on any day in a year', () => {

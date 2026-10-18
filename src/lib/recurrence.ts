@@ -59,7 +59,7 @@ export function getTasksDueToday(tasks: Task[], overrides: TaskOverride[], today
   return tasks.filter(t => isTaskDueToday(t, overrides, today))
 }
 
-// Returns false if a one-time completed task is older than 9 days (should be hidden)
+// Hide one-time tasks after their completion window. Recurring tasks remain visible.
 export function isVisible(task: Task, today: string): boolean {
   if (task.repeat) return true           // recurring tasks always visible
   if (task.completedDates.length === 0) return true  // uncompleted one-time tasks always visible
@@ -70,6 +70,12 @@ export function isVisible(task: Task, today: string): boolean {
   const [cy, cm, cd] = latest.split('-').map(Number)
   const completedMs = new Date(cy, cm - 1, cd).getTime()
   return (todayMs - completedMs) / 86_400_000 <= 1
+}
+
+// The All Tasks list is for current/future one-time tasks and all recurring tasks.
+// Overdue one-time tasks remain available in Today until the user acts on them.
+export function isShownInAllTasks(task: Task, today: string): boolean {
+  return (Boolean(task.repeat) || task.baseDate >= today) && isVisible(task, today)
 }
 
 // Returns true if a one-time task is past its baseDate and not yet completed

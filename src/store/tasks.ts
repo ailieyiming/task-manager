@@ -18,7 +18,7 @@ interface TasksState {
   addTask: (task: Omit<Task, 'id' | 'completedDates'>) => void
   updateTask: (id: string, changes: Partial<Omit<Task, 'id'>>) => void
   deleteTask: (id: string) => void
-  purgeOldCompleted: () => void   // removes one-time tasks completed > 2 days ago
+  purgeOldCompleted: () => void   // removes one-time tasks completed > 1 day ago
   markComplete: (taskId: string, date?: string) => void
   markIncomplete: (taskId: string, date?: string) => void
   editOccurrence: (taskId: string, date: string, changes: Partial<TaskOverride>) => void

@@ -247,13 +247,107 @@ const chineseQuotes = [
   { text: '星星之火，可以燎原。', source: '毛泽东《星星之火，可以燎原》（引语）' },
 ] as const
 
+// New entries are appended so older saved quote IDs keep their original text.
+const newEnglishQuotes = [
+  'I can miss someone and still move forward.',
+  'My peace does not depend on another person’s reply.',
+  'I choose what is real over what I hoped would happen.',
+  'I can close a chapter without closing my heart.',
+  'I do not need to revisit a decision that protects me.',
+  'Today, I put my energy where it can grow.',
+  'I can feel hurt and still make a clear choice.',
+  'I release the need to be chosen by the wrong person.',
+  'A difficult week does not define my future.',
+  'I keep my standards and make room for peace.',
+  'I can start again without explaining myself to everyone.',
+  'My next step matters more than yesterday’s uncertainty.',
+  'I give my attention to people who meet me with care.',
+  'I can be patient with healing and firm with my boundaries.',
+  'I do not have to chase what is leaving.',
+  'I let go of what drains me and protect what strengthens me.',
+  'I can make progress before I feel completely ready.',
+  'I will do the useful thing in front of me.',
+  'I stay steady when feelings rise and fall.',
+  'I am allowed to build a good life from this point on.',
+  'I can choose a new direction without calling the past a mistake.',
+  'My attention is valuable; I spend it with care.',
+  'I can be kind without abandoning myself.',
+  'I trust actions more than promises.',
+] as const
+
+const newChineseQuotes = [
+  { text: '弃我去者，昨日之日不可留。', source: '李白《宣州谢朓楼饯别校书叔云》', meaning: '昨天已过去，不能把它留住；把心力放回今天。' },
+  { text: '两岸猿声啼不住，轻舟已过万重山。', source: '李白《早发白帝城》', meaning: '即使周围仍有杂音，你也可以继续向前。' },
+  { text: '长风破浪会有时，直挂云帆济沧海。', source: '李白《行路难》', meaning: '眼前的阻碍不是终点；继续走，机会还会来。' },
+  { text: '天生我材必有用。', source: '李白《将进酒》', meaning: '相信自己的能力，不因一次失意否定自己。' },
+  { text: '仰天大笑出门去，我辈岂是蓬蒿人。', source: '李白《南陵别儿童入京》', meaning: '带着自信出发，不把自己困在失意里。' },
+  { text: '事了拂衣去，深藏身与名。', source: '李白《侠客行》', meaning: '事情结束后就放手，不必反复证明自己。' },
+  { text: '当断不断，反受其乱。', source: '《史记·齐悼惠王世家》引古语', meaning: '该作决定时不要一直拖延；拖延可能让局面更乱。' },
+  { text: '雄关漫道真如铁，而今迈步从头越。', source: '毛泽东《忆秦娥·娄山关》', meaning: '难关仍在，也可以从现在重新迈步。' },
+  { text: '不管风吹浪打，胜似闲庭信步。', source: '毛泽东《水调歌头·游泳》', meaning: '外界有波动时，仍可稳住自己的步伐。' },
+  { text: '世上无难事，只要肯登攀。', source: '毛泽东《水调歌头·重上井冈山》', meaning: '困难可以分步处理；先迈出下一步。' },
+  { text: '踏遍青山人未老，风景这边独好。', source: '毛泽东《清平乐·会昌》', meaning: '经历起伏后，仍可以发现新的景色和机会。' },
+  { text: '敌军围困万千重，我自岿然不动。', source: '毛泽东《西江月·井冈山》', meaning: '压力再大，也先稳住自己。' },
+  { text: '一万年太久，只争朝夕。', source: '毛泽东《满江红·和郭沫若同志》', meaning: '不要把行动推给遥远的将来；今天就开始。' },
+] as const
+
+const classicMeanings: Record<number, string> = {
+  105: '先看清自己和对方，再决定怎么行动。',
+  106: '先做好准备，再争取结果。',
+  108: '有准备的人，比毫无准备的人更有优势。',
+  109: '先稳住自己的位置，再等待合适的机会。',
+  110: '意志不坚定，判断就难清楚；说话不守信，行动就难有结果。',
+  113: '彼此关心，也让彼此受益。',
+  114: '做有益的事，减少有害的事。',
+  159: '多做准备和判断，胜算才更高。',
+  160: '重视有效的结果，不把事情无谓拖长。',
+  161: '先靠判断和策略解决问题。',
+  162: '知道何时该行动、何时该停下，才更容易成功。',
+  163: '方向一致，行动才更有力。',
+  164: '先把能控制的部分做好，机会再看外部条件。',
+  167: '用稳妥的方法站住脚，再用灵活的方法突破。',
+  169: '借助合适的形势，不把全部压力压在个人身上。',
+  170: '尽量掌握主动，不总被别人牵着走。',
+  171: '避开对方强处，寻找可以突破的地方。',
+  172: '方法要随实际情况调整。',
+  174: '面对混乱时，先稳住自己的秩序和情绪。',
+  175: '保存精力，等到有利的时机再行动。',
+  176: '做决定时，同时看收益和风险。',
+  177: '不要只盼风险不来；先做好应对准备。',
+  179: '有实际好处才行动；没有好处就停止。',
+  185: '学到的东西，要靠行动落实。',
+  186: '基础未稳时，先不要追求表面的成果。',
+  189: '认真做事，能力会逐日增强。',
+  191: '基础不牢，后面的事也难稳。',
+  192: '源头有问题，结果也难清楚。',
+  193: '好名声来自长期行动，不会凭空出现。',
+  195: '多做事，不急着夸耀功劳。',
+  202: '把公共的事放在前面，少让私怨左右判断。',
+  203: '地位不是永远不变的，能力和行动很重要。',
+  204: '任用有能力的人，调整不合适的安排。',
+  207: '去掉无用的消耗，把资源用在重要的地方。',
+  210: '让人做自己擅长的事。',
+  211: '增加成本却没有带来益处，就应停下。',
+  213: '希望大家更富足，而不是陷入贫困。',
+}
+
+const legacyQuoteCount = englishQuotes.length + chineseQuotes.length
+const newChineseStart = legacyQuoteCount + newEnglishQuotes.length
+
 export const quotes: readonly (string | null)[] = [
   ...englishQuotes,
   ...chineseQuotes.map((quote) => quote?.text ?? null),
+  ...newEnglishQuotes,
+  ...newChineseQuotes.map((quote) => quote.text),
 ]
 
 export function quoteSource(id: number): string | undefined {
-  return chineseQuotes[id - englishQuotes.length]?.source
+  if (id < legacyQuoteCount) return chineseQuotes[id - englishQuotes.length]?.source
+  return newChineseQuotes[id - newChineseStart]?.source
+}
+
+export function quoteMeaning(id: number): string | undefined {
+  return classicMeanings[id] ?? newChineseQuotes[id - newChineseStart]?.meaning
 }
 
 export function isActiveQuote(id: number): boolean {
@@ -264,19 +358,25 @@ export function quoteForDate(date: string, rejectedIds: number[]) {
   const [year, month, day] = date.split('-').map(Number)
   const dayNumber = Math.floor(Date.UTC(year, month - 1, day) / 86_400_000)
   const rejected = new Set(rejectedIds)
-  const isChineseDay = dayNumber % 2 === 0
-  const preferredStart = isChineseDay ? englishQuotes.length : 0
-  const preferredLength = isChineseDay ? chineseQuotes.length : englishQuotes.length
-  const otherStart = isChineseDay ? 0 : englishQuotes.length
-  const otherLength = isChineseDay ? englishQuotes.length : chineseQuotes.length
-  const dayInLanguage = Math.floor(dayNumber / 2)
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay()
+  const maoIds = [115, 116, 117, 118, 215, 216, 217, 218, 219, 222, 224, 225, 226, 228, 230, 231, 232, 235, 236, 237, 241, 243, 244, 246, 247, 248, 251, 252, 254, 255, 258, 259,
+    ...newChineseQuotes.map((quote, index) => quote.source.startsWith('毛泽东') ? newChineseStart + index : -1).filter(id => id >= 0)]
+  const classicIds = [...Object.keys(classicMeanings).map(Number),
+    ...newChineseQuotes.map((quote, index) => !quote.source.startsWith('毛泽东') ? newChineseStart + index : -1).filter(id => id >= 0)]
+  const englishIds = newEnglishQuotes.map((_, index) => legacyQuoteCount + index)
+  // Three Mao days, two English days, and two classical days each week.
+  const pools = weekday === 1 || weekday === 3 || weekday === 6
+    ? [maoIds, classicIds, englishIds]
+    : weekday === 2 || weekday === 5
+      ? [englishIds, maoIds, classicIds]
+      : [classicIds, maoIds, englishIds]
 
-  for (const [start, length] of [[preferredStart, preferredLength], [otherStart, otherLength]]) {
-    const firstIndex = ((dayInLanguage * 37) % length + length) % length
-    for (let offset = 0; offset < length; offset++) {
-      const id = start + (firstIndex + offset) % length
+  for (const pool of pools) {
+    const firstIndex = (Math.imul(dayNumber, 2654435761) >>> 0) % pool.length
+    for (let offset = 0; offset < pool.length; offset++) {
+      const id = pool[(firstIndex + offset) % pool.length]
       const text = quotes[id]
-      if (!rejected.has(id) && text) return { id, text, source: quoteSource(id) }
+      if (!rejected.has(id) && text) return { id, text, source: quoteSource(id), meaning: quoteMeaning(id) }
     }
   }
   return null

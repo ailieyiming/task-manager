@@ -72,7 +72,7 @@ function App() {
           </>
         )}
       </main>
-      {!recoveryFlow && <TabBar />}
+      {!recoveryFlow && activeTab !== 'cloud' && <TabBar />}
       {!recoveryFlow && userId && cloudMode === 'connecting' && (
         <div className="fixed inset-0 z-40 bg-white/75 flex items-center justify-center" role="status" aria-live="polite">
           <div className="bg-white border border-stone-100 rounded-2xl px-6 py-5 shadow-lg text-[14px] text-[#1e3a5f]">

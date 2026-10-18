@@ -1,13 +1,12 @@
-import { CheckSquare, Target, Dumbbell, Cloud } from 'lucide-react'
+import { CheckSquare, Target, Dumbbell } from 'lucide-react'
 import { useAppStore } from '../../store/app'
 
 type Tab = 'tasks' | 'targets' | 'gym' | 'cloud'
 
 const tabs: { id: Tab; label: string; Icon: typeof CheckSquare }[] = [
   { id: 'tasks', label: 'Tasks', Icon: CheckSquare },
-  { id: 'targets', label: 'Targets', Icon: Target },
   { id: 'gym', label: 'Gym', Icon: Dumbbell },
-  { id: 'cloud', label: 'Cloud', Icon: Cloud },
+  { id: 'targets', label: 'Targets', Icon: Target },
 ]
 
 export function TabBar() {

@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { ChevronDown, Cloud, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -11,8 +11,9 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { useTasksStore } from '../store/tasks'
-import { localToday } from '../lib/date'
-import { isTaskDueToday, isCompleted, isVisible } from '../lib/recurrence'
+import { localToday, parseLocalDate } from '../lib/date'
+import { isTaskDueToday, isCompleted, isShownInAllTasks, isVisible } from '../lib/recurrence'
+import { useAppStore } from '../store/app'
 import { TaskCard } from '../components/tasks/TaskCard'
 import { TaskForm } from '../components/tasks/TaskForm'
 import { DailyQuote } from '../components/tasks/DailyQuote'
@@ -27,6 +28,8 @@ export function TasksPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('today')
   const [today, setToday] = useState(() => localToday())
   const [spinning, setSpinning] = useState(false)
+  const [completedOpen, setCompletedOpen] = useState(false)
+  const setTab = useAppStore(s => s.setTab)
 
   useEffect(() => {
     const updateDate = () => {
@@ -48,7 +51,7 @@ export function TasksPage() {
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
   )
 
-  // Today view — exclude tasks that are completed and past 9-day window
+  // Today includes overdue one-time tasks until they are completed, edited, or deleted.
   const todaysTasks = useMemo(() => {
     const due = tasks.filter(t => isTaskDueToday(t, overrides, today) && isVisible(t, today))
     return due.sort((a, b) => {
@@ -63,10 +66,10 @@ export function TasksPage() {
   const completed = todaysTasks.filter(t => isCompleted(t, overrides, today))
   const remaining = todaysTasks.filter(t => !isCompleted(t, overrides, today))
 
-  // All tasks view — visible tasks sorted by date
+  // All Tasks does not list one-time tasks with past dates.
   const allTasks = useMemo(() => {
     return [...tasks]
-      .filter(t => isVisible(t, today))
+      .filter(t => isShownInAllTasks(t, today))
       .sort((a, b) => a.baseDate.localeCompare(b.baseDate))
   }, [tasks, today])
 
@@ -89,7 +92,7 @@ export function TasksPage() {
     )
   }
 
-  const displayDate = new Date().toLocaleDateString('en-GB', {
+  const displayDate = parseLocalDate(today).toLocaleDateString('en-GB', {
     weekday: 'short', day: 'numeric', month: 'short'
   })
 
@@ -111,11 +114,19 @@ export function TasksPage() {
               </p>
             ) : (
               <p className="text-[15px] font-semibold text-stone-900">
-                {tasks.length} task{tasks.length !== 1 ? 's' : ''} total
+                {allTasks.length} task{allTasks.length !== 1 ? 's' : ''} shown
               </p>
             )}
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTab('cloud')}
+              className="w-9 h-9 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100"
+              aria-label="Open cloud and account"
+              title="Cloud and account"
+            >
+              <Cloud size={18} />
+            </button>
             {/* Refresh button */}
             <button
               onClick={refresh}
@@ -170,19 +181,33 @@ export function TasksPage() {
             </div>
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={todaysTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+              <SortableContext items={remaining.map(t => t.id)} strategy={verticalListSortingStrategy}>
                 {remaining.map(task => (
                   <TaskCard key={task.id} task={task} onEdit={(t) => { setEditingTask(t); setShowForm(true) }} />
                 ))}
-                {completed.length > 0 && (
-                  <>
-                    <p className="text-[12px] font-medium text-stone-400 uppercase tracking-wide pt-2">Completed</p>
-                    {completed.map(task => (
-                      <TaskCard key={task.id} task={task} onEdit={(t) => { setEditingTask(t); setShowForm(true) }} />
-                    ))}
-                  </>
-                )}
               </SortableContext>
+              {completed.length > 0 && (
+                <section className="pt-2" aria-label="Completed tasks">
+                  <button
+                    type="button"
+                    onClick={() => setCompletedOpen(open => !open)}
+                    aria-expanded={completedOpen}
+                    className="w-full flex items-center justify-between rounded-xl bg-stone-100 px-3 py-3 text-[13px] font-medium text-stone-600"
+                  >
+                    <span>Completed ({completed.length})</span>
+                    <ChevronDown size={17} className={`transition-transform ${completedOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {completedOpen && (
+                    <SortableContext items={completed.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                      <div className="space-y-2 mt-2">
+                        {completed.map(task => (
+                          <TaskCard key={task.id} task={task} onEdit={(t) => { setEditingTask(t); setShowForm(true) }} />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  )}
+                </section>
+              )}
             </DndContext>
           )
         ) : (
@@ -190,8 +215,8 @@ export function TasksPage() {
           allTasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <div className="text-4xl mb-3">📋</div>
-              <p className="text-[16px] font-semibold text-stone-700 mb-1">No tasks yet</p>
-              <p className="text-[13px] text-stone-400 mb-4">Create your first task</p>
+              <p className="text-[16px] font-semibold text-stone-700 mb-1">No tasks to show</p>
+              <p className="text-[13px] text-stone-400 mb-4">Past one-time tasks stay in Today</p>
               <button
                 onClick={() => setShowForm(true)}
                 className="bg-[#1e3a5f] text-white px-5 py-2.5 rounded-xl text-[14px] font-medium"

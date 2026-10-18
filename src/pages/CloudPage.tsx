@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react'
-import { Cloud, CloudOff, Download, RefreshCw, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Cloud, CloudOff, Download, RefreshCw, ShieldCheck } from 'lucide-react'
 import { useCloudStore } from '../store/cloud'
+import { useAppStore } from '../store/app'
 import { downloadLocalBackup, refreshCloud, resolveCloudConflict } from '../lib/cloudSync'
 import { supabase } from '../lib/supabase'
 
 export function CloudPage({ recoveryFlow = false }: { recoveryFlow?: boolean }) {
   const { userId, email: signedInEmail, mode, message, lastSynced } = useCloudStore()
+  const setTab = useAppStore(s => s.setTab)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -114,9 +116,14 @@ export function CloudPage({ recoveryFlow = false }: { recoveryFlow?: boolean }) 
 
   return (
     <div className="flex-1 overflow-y-auto bg-stone-50">
-      <div className="bg-white border-b border-stone-100 px-4 py-4">
-        <p className="text-[13px] text-stone-400">Your data</p>
-        <h1 className="text-[18px] font-semibold text-stone-900">Cloud sync</h1>
+      <div className="bg-white border-b border-stone-100 px-4 py-4 flex items-center gap-3">
+        <button type="button" onClick={() => setTab('tasks')} aria-label="Back to tasks" className="w-9 h-9 flex items-center justify-center rounded-full text-[#1e3a5f] hover:bg-stone-100">
+          <ArrowLeft size={19} />
+        </button>
+        <div>
+          <p className="text-[13px] text-stone-400">Your data</p>
+          <h1 className="text-[18px] font-semibold text-stone-900">Cloud sync</h1>
+        </div>
       </div>
       <div className="px-4 py-5 space-y-4">
         <div className="bg-white border border-stone-100 rounded-2xl p-5 shadow-sm">
