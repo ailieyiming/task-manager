@@ -291,6 +291,72 @@ const newChineseQuotes = [
   { text: '一万年太久，只争朝夕。', source: '毛泽东《满江红·和郭沫若同志》', meaning: '不要把行动推给遥远的将来；今天就开始。' },
 ] as const
 
+// Original English affirmations. Append only: saved quote IDs must stay stable.
+const freshEnglishQuotes = [
+  'I can remember the good and still leave what is over.',
+  'A clear ending makes room for a better beginning.',
+  'I will not trade my peace for one more uncertain answer.',
+  'My worth does not change when someone walks away.',
+  'I can grieve a hope without returning to what hurt me.',
+  'I choose a clean break when a half-open door keeps me stuck.',
+  'I let facts guide me when longing changes the story.',
+  'The right connection will not require me to lose myself.',
+  'I can feel lonely tonight and still make a wise choice.',
+  'I stop asking the past to give me a different ending.',
+  'I can care deeply and still say that enough is enough.',
+  'My future gets more attention than an unanswered message.',
+  'I release the habit of checking what I have already decided.',
+  'One hard goodbye does not close the door to a full life.',
+  'I keep the lesson and leave the weight behind.',
+  'I do not need perfect closure to move with purpose.',
+  'I can miss the familiar without calling it right for me.',
+  'My next chapter begins with the choices I make today.',
+  'I bring my attention back to the life in front of me.',
+  'I can be tender with my feelings and firm with my limits.',
+
+  'I slow my breath before I decide what comes next.',
+  'A steady mind gives me more options than a hurried one.',
+  'I do not have to solve the whole year today.',
+  'I keep my footing when plans change around me.',
+  'I can rest without giving up on my goals.',
+  'I return to the habits that make me feel strong.',
+  'My patience is active: I prepare, observe, and move.',
+  'I protect my sleep because tomorrow deserves my energy.',
+  'Small acts of care build a life I can trust.',
+  'I can begin a difficult day with one useful task.',
+  'I allow my body time to recover and become stronger.',
+  'I stay composed without pretending that nothing hurts.',
+  'I choose a calm pace that I can sustain.',
+  'I put my strength into what I can influence.',
+  'I can withstand a setback without becoming the setback.',
+  'I meet pressure with preparation, not panic.',
+  'I make room for joy while I work through difficulty.',
+  'I trust steady practice more than a sudden burst of effort.',
+  'I can pause, reset, and return with a clearer mind.',
+  'The way I care for myself shapes the days ahead.',
+
+  'I build security by making one sound choice at a time.',
+  'My skills grow when I use them with focus.',
+  'I create value before I ask for recognition.',
+  'I can be ambitious and still live with ease.',
+  'I notice where my time produces real results.',
+  'I spend with intention and save for freedom.',
+  'I welcome good opportunities without chasing every option.',
+  'I take the next practical step, even when it is small.',
+  'I can learn a new skill and open a new path.',
+  'My work deserves fair pay and clear boundaries.',
+  'I make decisions that my future self can respect.',
+  'I use evidence to choose, then give the choice my effort.',
+  'I let my actions be louder than my doubts.',
+  'I can start with what I have and improve as I go.',
+  'I keep my promises to myself in ordinary moments.',
+  'I build a strong presence by listening and speaking clearly.',
+  'I choose people and projects that return my energy.',
+  'I can change direction without losing momentum.',
+  'Today offers enough time for one meaningful advance.',
+  'I am building a life that feels steady, healthy, and free.',
+] as const
+
 const classicMeanings: Record<number, string> = {
   105: '先看清自己和对方，再决定怎么行动。',
   106: '先做好准备，再争取结果。',
@@ -333,12 +399,14 @@ const classicMeanings: Record<number, string> = {
 
 const legacyQuoteCount = englishQuotes.length + chineseQuotes.length
 const newChineseStart = legacyQuoteCount + newEnglishQuotes.length
+const freshEnglishStart = newChineseStart + newChineseQuotes.length
 
 export const quotes: readonly (string | null)[] = [
   ...englishQuotes,
   ...chineseQuotes.map((quote) => quote?.text ?? null),
   ...newEnglishQuotes,
   ...newChineseQuotes.map((quote) => quote.text),
+  ...freshEnglishQuotes,
 ]
 
 export function quoteSource(id: number): string | undefined {
@@ -354,30 +422,51 @@ export function isActiveQuote(id: number): boolean {
   return Number.isInteger(id) && id >= 0 && id < quotes.length && quotes[id] !== null
 }
 
-export function quoteForDate(date: string, rejectedIds: number[]) {
-  const [year, month, day] = date.split('-').map(Number)
-  const dayNumber = Math.floor(Date.UTC(year, month - 1, day) / 86_400_000)
-  const rejected = new Set(rejectedIds)
-  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay()
-  const maoIds = [115, 116, 117, 118, 215, 216, 217, 218, 219, 222, 224, 225, 226, 228, 230, 231, 232, 235, 236, 237, 241, 243, 244, 246, 247, 248, 251, 252, 254, 255, 258, 259,
-    ...newChineseQuotes.map((quote, index) => quote.source.startsWith('毛泽东') ? newChineseStart + index : -1).filter(id => id >= 0)]
-  const classicIds = [...Object.keys(classicMeanings).map(Number),
-    ...newChineseQuotes.map((quote, index) => !quote.source.startsWith('毛泽东') ? newChineseStart + index : -1).filter(id => id >= 0)]
-  const englishIds = newEnglishQuotes.map((_, index) => legacyQuoteCount + index)
+const maoIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('毛泽东') ? [id] : [])
+const classicIds = quotes.flatMap((text, id) =>
+  text && quoteSource(id) && !quoteSource(id)?.startsWith('毛泽东') && quoteMeaning(id) ? [id] : [])
+const englishIds = [
+  ...newEnglishQuotes.map((_, index) => legacyQuoteCount + index),
+  ...freshEnglishQuotes.map((_, index) => freshEnglishStart + index),
+]
+const allActiveIds = quotes.flatMap((text, id) => text ? [id] : [])
+const scheduleStart = Math.floor(Date.UTC(2025, 0, 1) / 86_400_000)
+const noRepeatDays = 60
+
+function quoteIdForDay(dayNumber: number, rejected: Set<number>, recent: Set<number>): number | null {
+  const weekday = new Date(dayNumber * 86_400_000).getUTCDay()
   // Three Mao days, two English days, and two classical days each week.
   const pools = weekday === 1 || weekday === 3 || weekday === 6
     ? [maoIds, classicIds, englishIds]
     : weekday === 2 || weekday === 5
       ? [englishIds, maoIds, classicIds]
       : [classicIds, maoIds, englishIds]
-
-  for (const pool of pools) {
+  for (const pool of [...pools, allActiveIds]) {
+    if (pool.length === 0) continue
     const firstIndex = (Math.imul(dayNumber, 2654435761) >>> 0) % pool.length
     for (let offset = 0; offset < pool.length; offset++) {
       const id = pool[(firstIndex + offset) % pool.length]
-      const text = quotes[id]
-      if (!rejected.has(id) && text) return { id, text, source: quoteSource(id), meaning: quoteMeaning(id) }
+      if (!rejected.has(id) && !recent.has(id)) return id
     }
   }
-  return null
+  // A repeat is unavoidable if fewer than 60 usable quotes remain.
+  return allActiveIds.find((id) => !rejected.has(id)) ?? null
+}
+
+export function quoteForDate(date: string, rejectedIds: number[]) {
+  const [year, month, day] = date.split('-').map(Number)
+  const dayNumber = Math.floor(Date.UTC(year, month - 1, day) / 86_400_000)
+  if (!Number.isFinite(dayNumber)) return null
+  const rejected = new Set(rejectedIds)
+  const recent: number[] = []
+  let id: number | null = null
+  for (let current = Math.min(scheduleStart, dayNumber); current <= dayNumber; current++) {
+    id = quoteIdForDay(current, rejected, new Set(recent))
+    if (id !== null) {
+      recent.push(id)
+      if (recent.length >= noRepeatDays) recent.shift()
+    }
+  }
+  const text = id === null ? null : quotes[id]
+  return text ? { id: id!, text, source: quoteSource(id!), meaning: quoteMeaning(id!) } : null
 }
