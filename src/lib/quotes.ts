@@ -390,6 +390,38 @@ const allianceQuotes = [
   { text: '宁为鸡口，无为牛后。', source: '《战国策·韩一·苏秦为楚合从说韩王》', meaning: '与其失去自主权，不如守住自己的选择。', url: 'https://zh.wikisource.org/zh-hant/戰國策_(士禮居叢書本)/韓/一' },
 ] as const
 
+// Direct first-person affirmations for the daily English rotation.
+// Older quotations stay in the array so saved IDs remain valid.
+const powerEnglishQuotes = [
+  'I take up space without apology.',
+  'I speak clearly and expect to be heard.',
+  'I say what I mean.',
+  'I walk into the room like I belong.',
+  'I do not shrink to make others comfortable.',
+  'I ask for what I want.',
+  'I can be seen and heard.',
+  'I hold the floor when I speak.',
+  'I am allowed to be bold.',
+  'I choose action over hesitation.',
+  'I keep going when it gets hard.',
+  'I show up before I feel ready.',
+  'I finish what I start.',
+  'I back myself.',
+  'I can handle a no.',
+  'I do not need permission to lead.',
+  'I hold my ground.',
+  'I trust my preparation.',
+  'I take the next step today.',
+  'I choose consistency over mood.',
+  'I recover and move forward.',
+  'I bring energy into the room.',
+  'I claim my place at the table.',
+  'I stop waiting to be chosen.',
+  'I decide, then I move.',
+  'I am not here to be small.',
+  'I make things happen.',
+] as const
+
 const classicMeanings: Record<number, string> = {
   105: '先看清自己和对方，再决定怎么行动。',
   106: '先做好准备，再争取结果。',
@@ -435,6 +467,7 @@ const newChineseStart = legacyQuoteCount + newEnglishQuotes.length
 const freshEnglishStart = newChineseStart + newChineseQuotes.length
 const sourcedEnglishStart = freshEnglishStart + freshEnglishQuotes.length
 const allianceStart = sourcedEnglishStart + sourcedEnglishQuotes.length
+const powerEnglishStart = allianceStart + allianceQuotes.length
 
 export const quotes: readonly (string | null)[] = [
   ...englishQuotes,
@@ -444,23 +477,24 @@ export const quotes: readonly (string | null)[] = [
   ...freshEnglishQuotes,
   ...sourcedEnglishQuotes.map((quote) => quote.text),
   ...allianceQuotes.map((quote) => quote.text),
+  ...powerEnglishQuotes,
 ]
 
 export function quoteSource(id: number): string | undefined {
   if (id < legacyQuoteCount) return chineseQuotes[id - englishQuotes.length]?.source
   if (id >= sourcedEnglishStart && id < allianceStart) return sourcedEnglishQuotes[id - sourcedEnglishStart]?.source
-  if (id >= allianceStart) return allianceQuotes[id - allianceStart]?.source
+  if (id >= allianceStart && id < powerEnglishStart) return allianceQuotes[id - allianceStart]?.source
   return newChineseQuotes[id - newChineseStart]?.source
 }
 
 export function quoteMeaning(id: number): string | undefined {
-  if (id >= allianceStart) return allianceQuotes[id - allianceStart]?.meaning
+  if (id >= allianceStart && id < powerEnglishStart) return allianceQuotes[id - allianceStart]?.meaning
   return classicMeanings[id] ?? newChineseQuotes[id - newChineseStart]?.meaning
 }
 
 export function quoteSourceUrl(id: number): string | undefined {
   if (id >= sourcedEnglishStart && id < allianceStart) return sourcedEnglishQuotes[id - sourcedEnglishStart]?.url
-  if (id >= allianceStart) return allianceQuotes[id - allianceStart]?.url
+  if (id >= allianceStart && id < powerEnglishStart) return allianceQuotes[id - allianceStart]?.url
   return undefined
 }
 
@@ -470,10 +504,21 @@ export function isActiveQuote(id: number): boolean {
 
 const maoIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('毛泽东') ? [id] : [])
 const sunziIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('《孙子兵法') ? [id] : [])
-const englishIds = sourcedEnglishQuotes.map((_, index) => sourcedEnglishStart + index)
+const preferredEarlierEnglish = new Set([
+  'I am comfortable taking up the space I need.',
+  'I choose persistence over the pressure to be perfect.',
+  'I speak clearly and let my words carry their weight.',
+  'I enter each room with calm confidence and respect.',
+  'I can set boundaries with grace and confidence.',
+  'I let my actions be louder than my doubts.',
+])
+const englishIds = [
+  ...quotes.flatMap((text, id) => text && preferredEarlierEnglish.has(text) ? [id] : []),
+  ...powerEnglishQuotes.map((_, index) => powerEnglishStart + index),
+]
 const allianceIds = allianceQuotes.map((_, index) => allianceStart + index)
 const liBaiIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('李白') ? [id] : [])
-const allActiveIds = quotes.flatMap((text, id) => text ? [id] : [])
+const allActiveIds = [...maoIds, ...englishIds, ...sunziIds, ...allianceIds, ...liBaiIds]
 const scheduleStart = Math.floor(Date.UTC(2025, 0, 1) / 86_400_000)
 const noRepeatDays = 60
 // Each rolling 20-day cycle has exactly 10 Mao, 5 English, 3 Sunzi,
