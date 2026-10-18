@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { ChevronDown, Cloud, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { ChevronDown, Cloud, Plus, RefreshCw, Repeat2, Search, Trash2, X } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -26,6 +26,7 @@ export function TasksPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('today')
+  const [search, setSearch] = useState('')
   const [today, setToday] = useState(() => localToday())
   const [spinning, setSpinning] = useState(false)
   const [completedOpen, setCompletedOpen] = useState(false)
@@ -72,6 +73,63 @@ export function TasksPage() {
       .filter(t => isShownInAllTasks(t, today))
       .sort((a, b) => a.baseDate.localeCompare(b.baseDate))
   }, [tasks, today])
+  const matchingTasks = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase()
+    return term ? allTasks.filter(task => task.title.toLocaleLowerCase().includes(term)) : allTasks
+  }, [allTasks, search])
+  const oneTimeTasks = matchingTasks.filter(task => !task.repeat)
+  const repeatingTasks = matchingTasks.filter(task => task.repeat)
+
+  const renderAllTask = (task: Task) => (
+    <div key={task.id} className="flex items-center gap-3 bg-white rounded-xl px-3 py-3 shadow-sm border border-stone-100">
+      {task.repeat ? (
+        <div className="flex-shrink-0 w-[52px] h-[48px] flex items-center justify-center rounded-lg bg-stone-100 text-[#1e3a5f]">
+          <Repeat2 size={20} aria-hidden="true" />
+        </div>
+      ) : (
+        <div className={`flex-shrink-0 text-center px-2 py-1 rounded-lg min-w-[52px] ${
+          task.baseDate === today ? 'bg-[#1e3a5f] text-white' : 'bg-stone-100 text-stone-500'
+        }`}>
+          <p className="text-[10px] font-medium leading-none">
+            {parseLocalDate(task.baseDate).toLocaleDateString('en-GB', { month: 'short' }).toUpperCase()}
+          </p>
+          <p className="text-[18px] font-bold leading-tight">{parseLocalDate(task.baseDate).getDate()}</p>
+        </div>
+      )}
+
+      <div className="flex-1 min-w-0">
+        <p className="text-[15px] font-medium text-stone-900 truncate">{task.title}</p>
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+          {task.repeat && (
+            <span className="text-[11px] text-stone-500 capitalize">
+              {task.repeat.freq} · starts {parseLocalDate(task.baseDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+            </span>
+          )}
+          {task.targetId && (
+            <span className="text-[11px] bg-[#1e3a5f]/10 text-[#1e3a5f] px-1.5 py-0.5 rounded-full">linked</span>
+          )}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => { setEditingTask(task); setShowForm(true) }}
+        className="flex-shrink-0 min-h-10 px-3 text-[13px] font-medium text-stone-500 border border-stone-200 rounded-lg hover:text-stone-700"
+      >
+        Edit
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          if (confirm(`Delete "${task.title}" permanently?`)) deleteTask(task.id)
+        }}
+        className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-stone-400 hover:text-red-600 rounded-lg"
+        aria-label={`Delete ${task.title}`}
+      >
+        <Trash2 size={16} />
+      </button>
+    </div>
+  )
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -114,7 +172,7 @@ export function TasksPage() {
               </p>
             ) : (
               <p className="text-[15px] font-semibold text-stone-900">
-                {allTasks.length} task{allTasks.length !== 1 ? 's' : ''} shown
+                {matchingTasks.length} task{matchingTasks.length !== 1 ? 's' : ''} shown
               </p>
             )}
           </div>
@@ -145,19 +203,22 @@ export function TasksPage() {
           </div>
         </div>
 
-        {/* Today / All toggle */}
-        <div className="flex border-b border-stone-100">
+        {/* Large view switch stays visible while the task list scrolls. */}
+        <div className="flex gap-1 rounded-xl bg-stone-100 p-1 mb-3" role="tablist" aria-label="Task views">
           {(['today', 'all'] as ViewMode[]).map(mode => (
             <button
               key={mode}
+              type="button"
+              role="tab"
+              aria-selected={viewMode === mode}
               onClick={() => setViewMode(mode)}
-              className={`flex-1 py-2 text-[13px] font-medium border-b-2 transition-colors ${
+              className={`flex-1 min-h-11 rounded-lg text-[14px] font-medium transition-colors ${
                 viewMode === mode
-                  ? 'border-[#1e3a5f] text-[#1e3a5f]'
-                  : 'border-transparent text-stone-400'
+                  ? 'bg-white text-[#1e3a5f] shadow-sm'
+                  : 'text-stone-500'
               }`}
             >
-              {mode === 'today' ? 'Today' : 'All Tasks'}
+              {mode === 'today' ? `Today · ${remaining.length}` : `All Tasks · ${allTasks.length}`}
             </button>
           ))}
         </div>
@@ -165,118 +226,94 @@ export function TasksPage() {
 
       {/* Task list */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-        <DailyQuote date={today} />
         {viewMode === 'today' ? (
-          todaysTasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-center">
-              <div className="text-4xl mb-3">✓</div>
-              <p className="text-[16px] font-semibold text-stone-700 mb-1">No tasks today</p>
-              <p className="text-[13px] text-stone-400 mb-4">Add something to get started</p>
-              <button
-                onClick={() => setShowForm(true)}
-                className="bg-[#1e3a5f] text-white px-5 py-2.5 rounded-xl text-[14px] font-medium"
-              >
-                Add your first task
-              </button>
-            </div>
-          ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={remaining.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                {remaining.map(task => (
-                  <TaskCard key={task.id} task={task} onEdit={(t) => { setEditingTask(t); setShowForm(true) }} />
-                ))}
-              </SortableContext>
-              {completed.length > 0 && (
-                <section className="pt-2" aria-label="Completed tasks">
-                  <button
-                    type="button"
-                    onClick={() => setCompletedOpen(open => !open)}
-                    aria-expanded={completedOpen}
-                    className="w-full flex items-center justify-between rounded-xl bg-stone-100 px-3 py-3 text-[13px] font-medium text-stone-600"
-                  >
-                    <span>Completed ({completed.length})</span>
-                    <ChevronDown size={17} className={`transition-transform ${completedOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {completedOpen && (
-                    <SortableContext items={completed.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                      <div className="space-y-2 mt-2">
-                        {completed.map(task => (
-                          <TaskCard key={task.id} task={task} onEdit={(t) => { setEditingTask(t); setShowForm(true) }} />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  )}
-                </section>
-              )}
-            </DndContext>
-          )
+          <>
+            <DailyQuote date={today} />
+            {todaysTasks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-64 text-center">
+                <div className="text-4xl mb-3">✓</div>
+                <p className="text-[16px] font-semibold text-stone-700 mb-1">No tasks today</p>
+                <p className="text-[13px] text-stone-400 mb-4">Add something to get started</p>
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="bg-[#1e3a5f] text-white px-5 py-2.5 rounded-xl text-[14px] font-medium"
+                >
+                  Add your first task
+                </button>
+              </div>
+            ) : (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={remaining.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                  {remaining.map(task => (
+                    <TaskCard key={task.id} task={task} onEdit={(t) => { setEditingTask(t); setShowForm(true) }} />
+                  ))}
+                </SortableContext>
+                {completed.length > 0 && (
+                  <section className="pt-2" aria-label="Completed tasks">
+                    <button
+                      type="button"
+                      onClick={() => setCompletedOpen(open => !open)}
+                      aria-expanded={completedOpen}
+                      className="w-full flex items-center justify-between rounded-xl bg-stone-100 px-3 py-3 text-[13px] font-medium text-stone-600"
+                    >
+                      <span>Completed ({completed.length})</span>
+                      <ChevronDown size={17} className={`transition-transform ${completedOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {completedOpen && (
+                      <SortableContext items={completed.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                        <div className="space-y-2 mt-2">
+                          {completed.map(task => (
+                            <TaskCard key={task.id} task={task} onEdit={(t) => { setEditingTask(t); setShowForm(true) }} />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    )}
+                  </section>
+                )}
+              </DndContext>
+            )}
+          </>
         ) : (
           /* All Tasks view */
-          allTasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-center">
-              <div className="text-4xl mb-3">📋</div>
-              <p className="text-[16px] font-semibold text-stone-700 mb-1">No tasks to show</p>
-              <p className="text-[13px] text-stone-400 mb-4">Past one-time tasks stay in Today</p>
-              <button
-                onClick={() => setShowForm(true)}
-                className="bg-[#1e3a5f] text-white px-5 py-2.5 rounded-xl text-[14px] font-medium"
-              >
-                Add task
-              </button>
+          <div className="space-y-4 pb-4">
+            <div className="relative">
+              <Search size={17} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+              <input
+                type="search"
+                value={search}
+                onChange={event => setSearch(event.target.value)}
+                placeholder="Search tasks"
+                aria-label="Search tasks"
+                className="w-full min-h-11 rounded-xl border border-stone-200 bg-white pl-10 pr-10 text-[14px] text-stone-900 outline-none focus:border-[#1e3a5f]"
+              />
+              {search && (
+                <button type="button" onClick={() => setSearch('')} aria-label="Clear search" className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-stone-400">
+                  <X size={16} />
+                </button>
+              )}
             </div>
-          ) : (
-            <div className="space-y-2 pb-4">
-              {allTasks.map(task => (
-                <div key={task.id} className="flex items-center gap-3 bg-white rounded-xl px-3 py-3 shadow-sm border border-stone-100">
-                  {/* Date pill */}
-                  <div className={`flex-shrink-0 text-center px-2 py-1 rounded-lg min-w-[52px] ${
-                    task.baseDate === today ? 'bg-[#1e3a5f] text-white' : 'bg-stone-100 text-stone-500'
-                  }`}>
-                    <p className="text-[10px] font-medium leading-none">
-                      {new Date(task.baseDate + 'T12:00:00').toLocaleDateString('en-GB', { month: 'short' }).toUpperCase()}
-                    </p>
-                    <p className="text-[18px] font-bold leading-tight">
-                      {new Date(task.baseDate + 'T12:00:00').getDate()}
-                    </p>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[15px] font-medium text-stone-900 truncate">{task.title}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                      {task.repeat && (
-                        <span className="text-[11px] bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded-full">
-                          {task.repeat.freq}
-                        </span>
-                      )}
-                      {task.targetId && (
-                        <span className="text-[11px] bg-[#1e3a5f]/10 text-[#1e3a5f] px-1.5 py-0.5 rounded-full">
-                          linked
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Edit / Delete buttons */}
-                  <button
-                    onClick={() => { setEditingTask(task); setShowForm(true) }}
-                    className="flex-shrink-0 px-3 py-1.5 text-[13px] font-medium text-stone-500 border border-stone-200 rounded-lg hover:text-stone-700"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm(`Delete "${task.title}" permanently?`)) deleteTask(task.id)
-                    }}
-                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-stone-400 hover:text-red-600 rounded-lg"
-                    title="Delete task"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )
+            {matchingTasks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-52 text-center">
+                <p className="text-[16px] font-semibold text-stone-700 mb-1">{search ? 'No matching tasks' : 'No tasks to show'}</p>
+                {!search && <p className="text-[13px] text-stone-400">Past one-time tasks stay in Today</p>}
+              </div>
+            ) : (
+              <>
+                {oneTimeTasks.length > 0 && (
+                  <section className="space-y-2" aria-label="One-time tasks">
+                    <h2 className="text-[12px] font-semibold uppercase tracking-wide text-stone-500">One-time · {oneTimeTasks.length}</h2>
+                    {oneTimeTasks.map(renderAllTask)}
+                  </section>
+                )}
+                {repeatingTasks.length > 0 && (
+                  <section className="space-y-2" aria-label="Repeating tasks">
+                    <h2 className="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Repeating · {repeatingTasks.length}</h2>
+                    {repeatingTasks.map(renderAllTask)}
+                  </section>
+                )}
+              </>
+            )}
+          </div>
         )}
       </div>
 
