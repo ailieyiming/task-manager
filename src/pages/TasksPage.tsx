@@ -30,6 +30,7 @@ export function TasksPage() {
   const [today, setToday] = useState(() => localToday())
   const [spinning, setSpinning] = useState(false)
   const [completedOpen, setCompletedOpen] = useState(false)
+  const [repeatingOpen, setRepeatingOpen] = useState(false)
   const setTab = useAppStore(s => s.setTab)
 
   useEffect(() => {
@@ -281,7 +282,10 @@ export function TasksPage() {
               <input
                 type="search"
                 value={search}
-                onChange={event => setSearch(event.target.value)}
+                onChange={event => {
+                  setSearch(event.target.value)
+                  if (event.target.value.trim()) setRepeatingOpen(true)
+                }}
                 placeholder="Search tasks"
                 aria-label="Search tasks"
                 className="w-full min-h-11 rounded-xl border border-stone-200 bg-white pl-10 pr-10 text-[14px] text-stone-900 outline-none focus:border-[#1e3a5f]"
@@ -299,16 +303,24 @@ export function TasksPage() {
               </div>
             ) : (
               <>
+                {repeatingTasks.length > 0 && (
+                  <section className="space-y-2" aria-label="Repeating tasks">
+                    <button
+                      type="button"
+                      onClick={() => setRepeatingOpen(open => !open)}
+                      aria-expanded={repeatingOpen}
+                      className="w-full min-h-11 flex items-center justify-between rounded-xl bg-stone-100 px-3 text-[13px] font-medium text-stone-600"
+                    >
+                      <span>Repeating ({repeatingTasks.length})</span>
+                      <ChevronDown size={17} className={`transition-transform ${repeatingOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {repeatingOpen && <div className="space-y-2">{repeatingTasks.map(renderAllTask)}</div>}
+                  </section>
+                )}
                 {oneTimeTasks.length > 0 && (
                   <section className="space-y-2" aria-label="One-time tasks">
                     <h2 className="text-[12px] font-semibold uppercase tracking-wide text-stone-500">One-time · {oneTimeTasks.length}</h2>
                     {oneTimeTasks.map(renderAllTask)}
-                  </section>
-                )}
-                {repeatingTasks.length > 0 && (
-                  <section className="space-y-2" aria-label="Repeating tasks">
-                    <h2 className="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Repeating · {repeatingTasks.length}</h2>
-                    {repeatingTasks.map(renderAllTask)}
                   </section>
                 )}
               </>
