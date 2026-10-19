@@ -11,13 +11,17 @@ export interface AppData {
   keptIds: number[]
   rejectedIds: number[]
   decidedOn: string | null
+  acceptedByDate: Record<string, number>
   gymCheckIns: GymCheckIns
 }
 
-type LegacyAppData = Omit<AppData, 'gymCheckIns'> & { gymCheckIns?: GymCheckIns }
+type LegacyAppData = Omit<AppData, 'gymCheckIns' | 'acceptedByDate'> & {
+  gymCheckIns?: GymCheckIns
+  acceptedByDate?: Record<string, number>
+}
 
 export function normalizeAppData(data: LegacyAppData): AppData {
-  return { ...data, gymCheckIns: data.gymCheckIns ?? {} }
+  return { ...data, gymCheckIns: data.gymCheckIns ?? {}, acceptedByDate: data.acceptedByDate ?? {} }
 }
 
 // Postgres jsonb may reorder object keys; compare content, not serialization order.
@@ -36,6 +40,6 @@ export function stableStringify(value: unknown): string {
 export function hasRecords(data: AppData): boolean {
   return data.tasks.length > 0 || data.targets.length > 0 ||
     Object.keys(data.cumulativeCompleted).length > 0 ||
-    data.keptIds.length > 0 || data.rejectedIds.length > 0
+    data.keptIds.length > 0 || data.rejectedIds.length > 0 || Object.keys(data.acceptedByDate).length > 0
     || Object.keys(data.gymCheckIns).length > 0
 }

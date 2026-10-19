@@ -545,11 +545,18 @@ function quoteIdForDay(dayNumber: number, rejected: Set<number>, recent: Set<num
   return allActiveIds.find((id) => !rejected.has(id)) ?? null
 }
 
-export function quoteForDate(date: string, rejectedIds: number[]) {
+export function quoteForDate(date: string, rejectedIds: number[], acceptedByDate: Record<string, number> = {}) {
   const [year, month, day] = date.split('-').map(Number)
   const dayNumber = Math.floor(Date.UTC(year, month - 1, day) / 86_400_000)
   if (!Number.isFinite(dayNumber)) return null
   const rejected = new Set(rejectedIds)
+  for (const [acceptedDate, acceptedId] of Object.entries(acceptedByDate)) {
+    const [acceptedYear, acceptedMonth, acceptedDay] = acceptedDate.split('-').map(Number)
+    const acceptedNumber = Math.floor(Date.UTC(acceptedYear, acceptedMonth - 1, acceptedDay) / 86_400_000)
+    if (Number.isFinite(acceptedNumber) && acceptedNumber < dayNumber && dayNumber - acceptedNumber <= 30) {
+      rejected.add(acceptedId)
+    }
+  }
   const recent: number[] = []
   let id: number | null = null
   for (let current = Math.min(scheduleStart, dayNumber); current <= dayNumber; current++) {

@@ -45,6 +45,7 @@ function snapshot(): AppData {
     keptIds: quotes.keptIds,
     rejectedIds: quotes.rejectedIds,
     decidedOn: quotes.decidedOn,
+    acceptedByDate: quotes.acceptedByDate,
     gymCheckIns: {},
   }
 }
@@ -56,7 +57,8 @@ function isGymOnlySeed(data: AppData): boolean {
     Object.keys(data.cumulativeCompleted).length === 0 &&
     data.targets.length === 0 && data.orderedTargetIds.length === 0 &&
     data.keptIds.length === 0 && data.rejectedIds.length === 0 &&
-    data.decidedOn === null && Object.keys(data.gymCheckIns).length > 0
+    data.decidedOn === null && Object.keys(data.acceptedByDate).length === 0 &&
+    Object.keys(data.gymCheckIns).length > 0
 }
 
 function mergeGymSeed(local: AppData, remote: AppData): AppData | null {
@@ -77,6 +79,9 @@ function validData(value: unknown): value is AppData {
     Array.isArray(data.targets) && Array.isArray(data.orderedTargetIds) &&
     Array.isArray(data.keptIds) && Array.isArray(data.rejectedIds) &&
     (data.decidedOn === null || typeof data.decidedOn === 'string') &&
+    (data.acceptedByDate === undefined ||
+      (!!data.acceptedByDate && typeof data.acceptedByDate === 'object' && !Array.isArray(data.acceptedByDate) &&
+        Object.entries(data.acceptedByDate).every(([date, id]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isInteger(id)))) &&
     (data.gymCheckIns === undefined ||
       (!!data.gymCheckIns && typeof data.gymCheckIns === 'object' && !Array.isArray(data.gymCheckIns) &&
         Object.entries(data.gymCheckIns).every(([date, status]) => isGymDate(date) && isGymStatus(status))))
@@ -90,7 +95,7 @@ async function applyCloud(data: AppData) {
     cumulativeCompleted: data.cumulativeCompleted,
   })
   useTargetsStore.setState({ targets: data.targets, orderedTargetIds: data.orderedTargetIds })
-  useQuotesStore.setState({ keptIds: data.keptIds, rejectedIds: data.rejectedIds, decidedOn: data.decidedOn })
+  useQuotesStore.setState({ keptIds: data.keptIds, rejectedIds: data.rejectedIds, decidedOn: data.decidedOn, acceptedByDate: data.acceptedByDate })
 
   // Explicitly finish the local cache writes before recording a synced revision.
   await idbSet('task-manager-tasks', JSON.stringify({ state: {
@@ -109,6 +114,7 @@ async function applyCloud(data: AppData) {
     keptIds: data.keptIds,
     rejectedIds: data.rejectedIds,
     decidedOn: data.decidedOn,
+    acceptedByDate: data.acceptedByDate,
   }, version: 0 }))
 }
 
@@ -310,7 +316,7 @@ class SyncController {
       if (choice === 'cloud') {
         const data = this.remote?.data ?? {
           tasks: [], overrides: [], orderedTaskIds: [], cumulativeCompleted: {},
-          targets: [], orderedTargetIds: [], keptIds: [], rejectedIds: [], decidedOn: null,
+          targets: [], orderedTargetIds: [], keptIds: [], rejectedIds: [], decidedOn: null, acceptedByDate: {},
           gymCheckIns: {},
         }
         this.applying = true

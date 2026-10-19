@@ -8,16 +8,23 @@ interface Props {
 }
 
 export function DailyQuote({ date }: Props) {
-  const { keptIds, rejectedIds, decidedOn, hasHydrated, keepQuote, rejectQuote } = useQuotesStore()
+  const { keptIds, rejectedIds, acceptedByDate, hasHydrated, keepQuote, rejectQuote } = useQuotesStore()
   const [showSaved, setShowSaved] = useState(false)
 
   if (!hasHydrated) {
     return <div className="h-18 rounded-xl bg-[#1e3a5f]/5 animate-pulse" aria-label="Loading today's quote" />
   }
 
-  const quote = quoteForDate(date, rejectedIds)
+  const acceptedId = acceptedByDate[date]
+  const acceptedQuote = isActiveQuote(acceptedId) && !rejectedIds.includes(acceptedId)
+    ? { id: acceptedId, text: quotes[acceptedId]!, source: quoteSource(acceptedId), meaning: quoteMeaning(acceptedId) }
+    : null
+  // Older saved quotes have no acceptance date; keep them out of the rotation.
+  const datedAcceptedIds = new Set(Object.values(acceptedByDate))
+  const excludedIds = [...rejectedIds, ...keptIds.filter((id) => !datedAcceptedIds.has(id))]
+  const quote = acceptedQuote ?? quoteForDate(date, excludedIds, acceptedByDate)
   const activeKeptIds = keptIds.filter(isActiveQuote)
-  const showChoices = quote && decidedOn !== date && !keptIds.includes(quote.id)
+  const showChoices = quote && !acceptedQuote
 
   return (
     <>
@@ -47,7 +54,7 @@ export function DailyQuote({ date }: Props) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => rejectQuote(quote.id, date)}
+                  onClick={() => rejectQuote(quote.id)}
                   aria-label="Remove this quote"
                   className="w-8 h-8 flex items-center justify-center rounded-lg bg-white text-stone-500 border border-stone-200"
                 >

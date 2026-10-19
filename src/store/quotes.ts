@@ -6,9 +6,10 @@ interface QuotesState {
   keptIds: number[]
   rejectedIds: number[]
   decidedOn: string | null
+  acceptedByDate: Record<string, number>
   hasHydrated: boolean
   keepQuote: (id: number, date: string) => void
-  rejectQuote: (id: number, date?: string) => void
+  rejectQuote: (id: number) => void
   setHydrated: () => void
 }
 
@@ -24,18 +25,20 @@ export const useQuotesStore = create<QuotesState>()(
       keptIds: [],
       rejectedIds: [],
       decidedOn: null,
+      acceptedByDate: {},
       hasHydrated: false,
 
       keepQuote: (id, date) => set((state) => ({
         keptIds: state.keptIds.includes(id) ? state.keptIds : [...state.keptIds, id],
         rejectedIds: state.rejectedIds.filter((quoteId) => quoteId !== id),
         decidedOn: date,
+        acceptedByDate: { ...state.acceptedByDate, [date]: id },
       })),
 
-      rejectQuote: (id, date) => set((state) => ({
+      rejectQuote: (id) => set((state) => ({
         keptIds: state.keptIds.filter((quoteId) => quoteId !== id),
         rejectedIds: state.rejectedIds.includes(id) ? state.rejectedIds : [...state.rejectedIds, id],
-        decidedOn: date ?? state.decidedOn,
+        acceptedByDate: Object.fromEntries(Object.entries(state.acceptedByDate).filter(([, quoteId]) => quoteId !== id)),
       })),
 
       setHydrated: () => set({ hasHydrated: true }),
@@ -43,7 +46,8 @@ export const useQuotesStore = create<QuotesState>()(
     {
       name: 'task-manager-quotes',
       storage: createJSONStorage(() => idbStorage),
-      partialize: (state) => ({ keptIds: state.keptIds, rejectedIds: state.rejectedIds, decidedOn: state.decidedOn }),
+      partialize: (state) => ({ keptIds: state.keptIds, rejectedIds: state.rejectedIds, decidedOn: state.decidedOn, acceptedByDate: state.acceptedByDate }),
+      merge: (persisted, current) => ({ ...current, ...(persisted as Partial<QuotesState>), acceptedByDate: (persisted as Partial<QuotesState>)?.acceptedByDate ?? {} }),
       onRehydrateStorage: () => (state) => { state?.setHydrated() },
     }
   )
