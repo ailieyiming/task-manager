@@ -526,7 +526,7 @@ const noRepeatDays = 60
 const categoryCycle = [
   'mao', 'english', 'mao', 'sunzi', 'mao', 'english', 'mao', 'alliance',
   'mao', 'sunzi', 'english', 'mao', 'mao', 'liBai', 'english', 'mao',
-  'sunzi', 'mao', 'english', 'mao',
+  'english', 'mao', 'sunzi', 'mao',
 ] as const
 const categoryPools = { mao: maoIds, english: englishIds, sunzi: sunziIds, alliance: allianceIds, liBai: liBaiIds }
 
