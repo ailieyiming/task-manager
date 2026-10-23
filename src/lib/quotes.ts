@@ -430,6 +430,7 @@ const classicMeanings: Record<number, string> = {
   110: '意志不坚定，判断就难清楚；说话不守信，行动就难有结果。',
   113: '彼此关心，也让彼此受益。',
   114: '做有益的事，减少有害的事。',
+  155: '先了解真实情况，判断才更可靠。',
   159: '多做准备和判断，胜算才更高。',
   160: '重视有效的结果，不把事情无谓拖长。',
   161: '先靠判断和策略解决问题。',
@@ -446,6 +447,7 @@ const classicMeanings: Record<number, string> = {
   176: '做决定时，同时看收益和风险。',
   177: '不要只盼风险不来；先做好应对准备。',
   179: '有实际好处才行动；没有好处就停止。',
+  184: '预先了解情况，要靠调查，而不是靠占卜。',
   185: '学到的东西，要靠行动落实。',
   186: '基础未稳时，先不要追求表面的成果。',
   189: '认真做事，能力会逐日增强。',
@@ -453,13 +455,16 @@ const classicMeanings: Record<number, string> = {
   192: '源头有问题，结果也难清楚。',
   193: '好名声来自长期行动，不会凭空出现。',
   195: '多做事，不急着夸耀功劳。',
+  196: '说话重在有见地，不在于多。',
   202: '把公共的事放在前面，少让私怨左右判断。',
   203: '地位不是永远不变的，能力和行动很重要。',
   204: '任用有能力的人，调整不合适的安排。',
   207: '去掉无用的消耗，把资源用在重要的地方。',
+  208: '合理用财，减少不必要的劳累。',
   210: '让人做自己擅长的事。',
   211: '增加成本却没有带来益处，就应停下。',
   213: '希望大家更富足，而不是陷入贫困。',
+  214: '想要有序的生活，就要处理造成混乱的问题。',
 }
 
 const legacyQuoteCount = englishQuotes.length + chineseQuotes.length
@@ -502,33 +507,98 @@ export function isActiveQuote(id: number): boolean {
   return Number.isInteger(id) && id >= 0 && id < quotes.length && quotes[id] !== null
 }
 
-const maoIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('毛泽东') ? [id] : [])
-const sunziIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('《孙子兵法') ? [id] : [])
-const preferredEarlierEnglish = new Set([
+// Rotate only the lines that match the user's saved themes. Keep the complete
+// catalog and its IDs intact so saved and rejected choices stay valid.
+const preferredMao = new Set([
+  '排除万难，去争取胜利。',
+  '没有调查，没有发言权。',
+  '调查就是解决问题。',
+  '真理的标准只能是社会的实践。',
+  '要有目的地去研究。',
+  '言必信，行必果。',
+  '干就是学习。',
+  '自己动手，克服困难。',
+  '一万年太久，只争朝夕。',
+  '敌军围困万千重，我自岿然不动。',
+  '雄关漫道真如铁，而今迈步从头越。',
+  '实事求是。',
+])
+const preferredSunzi = new Set([
+  '知之者胜，不知者不胜。',
+  '多算胜，少算不胜。',
+  '先知者，不可取于鬼神。',
+  '兵贵胜，不贵久。',
+  '知彼知己，百战不殆。',
+  '胜兵先胜而后求战。',
+  '先为不可胜，以待敌之可胜。',
+  '知可以战与不可以战者胜。',
+  '不可胜在己，可胜在敌。',
+  '致人而不致于人。',
+  '以治待乱，以静待哗。',
+  '合于利而动，不合于利而止。',
+])
+const preferredMozi = new Set([
+  '欲天下之治，而恶其乱。',
+  '用财不费，民德不劳。',
+  '言无务为多而务为智。',
+  '志不强者智不达，言不信者行不果。',
+  '士虽有学，而行为本焉。',
+  '置本不安者，无务丰末。',
+  '君子力事日强。',
+  '加费不加民利则止。',
+])
+const preferredEnglish = new Set([
+  'I can be hopeful without demanding instant proof.',
+  'I make grounded decisions that support my future.',
+  'I am building a life with more options and ease.',
   'I am comfortable taking up the space I need.',
+  'Sleep, nourishment, and movement support my goals.',
   'I choose persistence over the pressure to be perfect.',
+  'I stay centered while opportunities unfold around me.',
+  'I can grow my resources with patience and intention.',
+  'I meet change with flexibility and inner stability.',
+  'My energy is calm, focused, and welcoming.',
+  'I do not shrink to make others comfortable.',
   'I speak clearly and let my words carry their weight.',
   'I enter each room with calm confidence and respect.',
   'I can set boundaries with grace and confidence.',
   'I let my actions be louder than my doubts.',
+  'I build security by making one sound choice at a time.',
+  'I make decisions that my future self can respect.',
+  'I use evidence to choose, then give the choice my effort.',
+  'I trust actions more than promises.',
+  'I put my strength into what I can influence.',
+  'I meet pressure with preparation, not panic.',
+  'My patience is active: I prepare, observe, and move.',
+  'I protect my sleep because tomorrow deserves my energy.',
+  'I take the next practical step, even when it is small.',
+  'I can be kind without abandoning myself.',
+  'I choose a clean break when a half-open door keeps me stuck.',
+  'I can miss someone and still move forward.',
+  'I am building a life that feels steady, healthy, and free.',
+  'I ask for what I want.',
+  'I hold my ground.',
+  'I take the next step today.',
+  'I recover and move forward.',
 ])
-const englishIds = [
-  ...quotes.flatMap((text, id) => text && preferredEarlierEnglish.has(text) ? [id] : []),
-  ...powerEnglishQuotes.map((_, index) => powerEnglishStart + index),
-]
+const maoIds = quotes.flatMap((text, id) => text && preferredMao.has(text) ? [id] : [])
+const sunziIds = quotes.flatMap((text, id) => text && preferredSunzi.has(text) ? [id] : [])
+const moziIds = quotes.flatMap((text, id) => text && preferredMozi.has(text) ? [id] : [])
+const englishIds = quotes.flatMap((text, id) => text && preferredEnglish.has(text) ? [id] : [])
 const allianceIds = allianceQuotes.map((_, index) => allianceStart + index)
 const liBaiIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('李白') ? [id] : [])
-const allActiveIds = [...maoIds, ...englishIds, ...sunziIds, ...allianceIds, ...liBaiIds]
+const allActiveIds = [...maoIds, ...englishIds, ...sunziIds, ...moziIds, ...allianceIds, ...liBaiIds]
 const scheduleStart = Math.floor(Date.UTC(2025, 0, 1) / 86_400_000)
 const noRepeatDays = 60
-// Each rolling 20-day cycle has exactly 10 Mao, 5 English, 3 Sunzi,
-// 1 alliance, and 1 Li Bai quote.
+// Each 20-day cycle: 8 English, 3 Mao, 3 Sunzi, 2 Mozi,
+// 2 alliance, and 2 Li Bai quotes.
 const categoryCycle = [
-  'mao', 'english', 'mao', 'sunzi', 'mao', 'english', 'mao', 'alliance',
-  'mao', 'sunzi', 'english', 'mao', 'mao', 'liBai', 'english', 'mao',
-  'english', 'mao', 'sunzi', 'mao',
+  'english', 'mao', 'english', 'sunzi', 'mozi',
+  'english', 'alliance', 'english', 'liBai', 'sunzi',
+  'english', 'mao', 'english', 'mozi', 'alliance',
+  'english', 'sunzi', 'liBai', 'english', 'mao',
 ] as const
-const categoryPools = { mao: maoIds, english: englishIds, sunzi: sunziIds, alliance: allianceIds, liBai: liBaiIds }
+const categoryPools = { mao: maoIds, english: englishIds, sunzi: sunziIds, mozi: moziIds, alliance: allianceIds, liBai: liBaiIds }
 
 function quoteIdForDay(dayNumber: number, rejected: Set<number>, recent: Set<number>): number | null {
   const category = categoryCycle[((dayNumber - scheduleStart) % categoryCycle.length + categoryCycle.length) % categoryCycle.length]
@@ -563,7 +633,7 @@ export function quoteForDate(date: string, rejectedIds: number[], acceptedByDate
     id = quoteIdForDay(current, rejected, new Set(recent))
     if (id !== null) {
       recent.push(id)
-      if (recent.length >= noRepeatDays) recent.shift()
+      if (recent.length > noRepeatDays) recent.shift()
     }
   }
   const text = id === null ? null : quotes[id]

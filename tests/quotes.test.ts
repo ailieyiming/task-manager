@@ -19,14 +19,15 @@ describe('daily quote catalog', () => {
     expect(sources.every(source => !source?.includes('道德经'))).toBe(true)
   })
 
-  test('keeps the requested 20-day category ratio', () => {
-    const counts = { mao: 0, english: 0, sunzi: 0, alliance: 0, liBai: 0 }
+  test('follows saved-quote themes and the six-source 20-day rotation', () => {
+    const counts = { mao: 0, english: 0, sunzi: 0, mozi: 0, alliance: 0, liBai: 0 }
     for (let day = 0; day < 20; day++) {
       const date = new Date(Date.UTC(2026, 9, 19 + day)).toISOString().slice(0, 10)
       const quote = quoteForDate(date, [])!
       const source = quoteSource(quote.id)
       if (source?.startsWith('毛泽东')) counts.mao++
       else if (source?.startsWith('《孙子兵法')) counts.sunzi++
+      else if (source?.startsWith('《墨子')) counts.mozi++
       else if (source?.startsWith('《战国策')) {
         counts.alliance++
         expect(quoteMeaning(quote.id)).toBeTruthy()
@@ -35,7 +36,15 @@ describe('daily quote catalog', () => {
         expect(quoteMeaning(quote.id)).toBeTruthy()
       } else counts.english++
     }
-    expect(counts).toEqual({ mao: 10, english: 5, sunzi: 3, alliance: 1, liBai: 1 })
+    expect(counts).toEqual({ mao: 3, english: 8, sunzi: 3, mozi: 2, alliance: 2, liBai: 2 })
+  })
+
+  test('does not repeat a quote during a 60-day window', () => {
+    const ids = Array.from({ length: 60 }, (_, day) => {
+      const date = new Date(Date.UTC(2026, 9, 1 + day)).toISOString().slice(0, 10)
+      return quoteForDate(date, [])!.id
+    })
+    expect(new Set(ids).size).toBe(ids.length)
   })
 
   test('never offers a retired quote on any day in a year', () => {
