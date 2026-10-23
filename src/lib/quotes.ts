@@ -422,6 +422,25 @@ const powerEnglishQuotes = [
   'I make things happen.',
 ] as const
 
+// The strategy theme combines sourced lines with original, uncredited reminders.
+// Append new entries; saved quote IDs must not change.
+const newStrategyQuotes: readonly { text: string; source?: string; meaning?: string; url?: string }[] = [
+  {
+    text: '与天奋斗，其乐无穷；与地奋斗，其乐无穷；与人奋斗，其乐无穷。',
+    source: '毛泽东早年自勉语（据《毛泽东年谱》转引）',
+    meaning: '遇到阻力时，继续争取主动，不把对抗当作退缩的理由。',
+    url: 'https://www.qinfeng.gov.cn/info/1064/218038.htm',
+  },
+  { text: '我可以合作，但不会用退让换和平。' },
+  { text: '该争取的，我会清楚地说出来。' },
+  { text: '对方的压力，不是我让步的理由。' },
+  { text: '我先看清筹码，再决定让步多少。' },
+  { text: '我不怕谈判，也不急着答应。' },
+  { text: '我的底线，不因对方强势而移动。' },
+  { text: '我争取属于我的，不为此道歉。' },
+  { text: '不为输赢冲动；为结果布局。' },
+]
+
 const classicMeanings: Record<number, string> = {
   105: '先看清自己和对方，再决定怎么行动。',
   106: '先做好准备，再争取结果。',
@@ -430,6 +449,7 @@ const classicMeanings: Record<number, string> = {
   110: '意志不坚定，判断就难清楚；说话不守信，行动就难有结果。',
   113: '彼此关心，也让彼此受益。',
   114: '做有益的事，减少有害的事。',
+  158: '看清对方尚未准备好的地方，再选择行动时机。',
   155: '先了解真实情况，判断才更可靠。',
   159: '多做准备和判断，胜算才更高。',
   160: '重视有效的结果，不把事情无谓拖长。',
@@ -446,7 +466,9 @@ const classicMeanings: Record<number, string> = {
   175: '保存精力，等到有利的时机再行动。',
   176: '做决定时，同时看收益和风险。',
   177: '不要只盼风险不来；先做好应对准备。',
+  178: '决定进退时，先看实际责任，不被虚名或指责左右。',
   179: '有实际好处才行动；没有好处就停止。',
+  182: '没有利益不轻举妄动；没有把握不贸然投入。',
   184: '预先了解情况，要靠调查，而不是靠占卜。',
   185: '学到的东西，要靠行动落实。',
   186: '基础未稳时，先不要追求表面的成果。',
@@ -473,6 +495,7 @@ const freshEnglishStart = newChineseStart + newChineseQuotes.length
 const sourcedEnglishStart = freshEnglishStart + freshEnglishQuotes.length
 const allianceStart = sourcedEnglishStart + sourcedEnglishQuotes.length
 const powerEnglishStart = allianceStart + allianceQuotes.length
+const newStrategyStart = powerEnglishStart + powerEnglishQuotes.length
 
 export const quotes: readonly (string | null)[] = [
   ...englishQuotes,
@@ -483,23 +506,27 @@ export const quotes: readonly (string | null)[] = [
   ...sourcedEnglishQuotes.map((quote) => quote.text),
   ...allianceQuotes.map((quote) => quote.text),
   ...powerEnglishQuotes,
+  ...newStrategyQuotes.map((quote) => quote.text),
 ]
 
 export function quoteSource(id: number): string | undefined {
   if (id < legacyQuoteCount) return chineseQuotes[id - englishQuotes.length]?.source
   if (id >= sourcedEnglishStart && id < allianceStart) return sourcedEnglishQuotes[id - sourcedEnglishStart]?.source
   if (id >= allianceStart && id < powerEnglishStart) return allianceQuotes[id - allianceStart]?.source
+  if (id >= newStrategyStart) return newStrategyQuotes[id - newStrategyStart]?.source
   return newChineseQuotes[id - newChineseStart]?.source
 }
 
 export function quoteMeaning(id: number): string | undefined {
   if (id >= allianceStart && id < powerEnglishStart) return allianceQuotes[id - allianceStart]?.meaning
+  if (id >= newStrategyStart) return newStrategyQuotes[id - newStrategyStart]?.meaning
   return classicMeanings[id] ?? newChineseQuotes[id - newChineseStart]?.meaning
 }
 
 export function quoteSourceUrl(id: number): string | undefined {
   if (id >= sourcedEnglishStart && id < allianceStart) return sourcedEnglishQuotes[id - sourcedEnglishStart]?.url
   if (id >= allianceStart && id < powerEnglishStart) return allianceQuotes[id - allianceStart]?.url
+  if (id >= newStrategyStart) return newStrategyQuotes[id - newStrategyStart]?.url
   return undefined
 }
 
@@ -585,20 +612,36 @@ const maoIds = quotes.flatMap((text, id) => text && preferredMao.has(text) ? [id
 const sunziIds = quotes.flatMap((text, id) => text && preferredSunzi.has(text) ? [id] : [])
 const moziIds = quotes.flatMap((text, id) => text && preferredMozi.has(text) ? [id] : [])
 const englishIds = quotes.flatMap((text, id) => text && preferredEnglish.has(text) ? [id] : [])
+const preferredStrategy = new Set([
+  '攻其无备，出其不意。',
+  '上兵伐谋。',
+  '避实而击虚。',
+  '无恃其不来，恃吾有以待之。',
+  '非利不动，非得不用，非危不战。',
+  '智者之虑，必杂于利害。',
+  '进不求名，退不避罪。',
+  '举公义，辟私怨。',
+  '官无常贵，而民无终贱。',
+  '有能则举之，无能则下之。',
+])
+const strategyIds = [
+  ...quotes.flatMap((text, id) => text && preferredStrategy.has(text) ? [id] : []),
+  ...newStrategyQuotes.map((_, index) => newStrategyStart + index),
+]
 const allianceIds = allianceQuotes.map((_, index) => allianceStart + index)
 const liBaiIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('李白') ? [id] : [])
-const allActiveIds = [...maoIds, ...englishIds, ...sunziIds, ...moziIds, ...allianceIds, ...liBaiIds]
+const allActiveIds = [...maoIds, ...englishIds, ...strategyIds, ...sunziIds, ...moziIds, ...allianceIds, ...liBaiIds]
 const scheduleStart = Math.floor(Date.UTC(2025, 0, 1) / 86_400_000)
 const noRepeatDays = 60
-// Each 20-day cycle: 8 English, 3 Mao, 3 Sunzi, 2 Mozi,
-// 2 alliance, and 2 Li Bai quotes.
+// Each 20-day cycle: 4 English, 4 strategy, 3 Mao, 3 Sunzi,
+// 2 Mozi, 2 alliance, and 2 Li Bai quotes.
 const categoryCycle = [
-  'english', 'mao', 'english', 'sunzi', 'mozi',
-  'english', 'alliance', 'english', 'liBai', 'sunzi',
-  'english', 'mao', 'english', 'mozi', 'alliance',
-  'english', 'sunzi', 'liBai', 'english', 'mao',
+  'english', 'mao', 'strategy', 'sunzi', 'mozi',
+  'english', 'alliance', 'strategy', 'liBai', 'sunzi',
+  'english', 'mao', 'strategy', 'mozi', 'alliance',
+  'english', 'sunzi', 'liBai', 'strategy', 'mao',
 ] as const
-const categoryPools = { mao: maoIds, english: englishIds, sunzi: sunziIds, mozi: moziIds, alliance: allianceIds, liBai: liBaiIds }
+const categoryPools = { mao: maoIds, english: englishIds, strategy: strategyIds, sunzi: sunziIds, mozi: moziIds, alliance: allianceIds, liBai: liBaiIds }
 
 function quoteIdForDay(dayNumber: number, rejected: Set<number>, recent: Set<number>): number | null {
   const category = categoryCycle[((dayNumber - scheduleStart) % categoryCycle.length + categoryCycle.length) % categoryCycle.length]
