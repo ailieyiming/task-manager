@@ -31,6 +31,7 @@ export function gymYearStats(checkIns: GymCheckIns, today = localToday()) {
   const recorded = counts.full + counts.relax + counts.missed
   return {
     ...counts,
+    attended: counts.full + counts.relax,
     elapsed,
     recorded,
     unrecorded: Math.max(0, elapsed - recorded),

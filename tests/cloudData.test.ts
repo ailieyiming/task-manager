@@ -4,6 +4,7 @@ import { hasRecords, normalizeAppData, stableStringify, type AppData } from '../
 const empty: AppData = {
   tasks: [], overrides: [], orderedTaskIds: [], cumulativeCompleted: {},
   targets: [], orderedTargetIds: [], keptIds: [], rejectedIds: [], decidedOn: null,
+  acceptedByDate: {},
   gymCheckIns: {},
 }
 
@@ -18,13 +19,15 @@ describe('cloud data migration', () => {
     expect(hasRecords(empty)).toBe(false)
     expect(hasRecords({ ...empty, cumulativeCompleted: { _standalone: 1 } })).toBe(true)
     expect(hasRecords({ ...empty, keptIds: [12] })).toBe(true)
+    expect(hasRecords({ ...empty, acceptedByDate: { '2026-10-19': 12 } })).toBe(true)
     expect(hasRecords({ ...empty, tasks: [{ id: 't', title: 'Task', baseDate: '2026-09-28', completedDates: [] }] })).toBe(true)
     expect(hasRecords({ ...empty, gymCheckIns: { '2026-10-05': 'full' } })).toBe(true)
   })
 
-  it('preserves older cloud snapshots while adding empty gym records', () => {
+  it('preserves older cloud snapshots while adding new fields', () => {
     const olderSnapshot = { ...empty }
     Reflect.deleteProperty(olderSnapshot, 'gymCheckIns')
+    Reflect.deleteProperty(olderSnapshot, 'acceptedByDate')
     expect(normalizeAppData(olderSnapshot)).toEqual(empty)
   })
 })

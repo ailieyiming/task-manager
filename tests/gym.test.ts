@@ -16,10 +16,28 @@ describe('gym year', () => {
     const stats = gymYearStats({ '2026-10-05': 'full', '2026-10-06': 'relax', '2026-10-07': 'missed' }, '2026-10-09')
     expect(stats.full).toBe(1)
     expect(stats.relax).toBe(1)
+    expect(stats.attended).toBe(2)
     expect(stats.missed).toBe(1)
     expect(stats.unrecorded).toBe(2)
     expect(stats.elapsed).toBe(5)
     expect(stats.finished).toBe(false)
+  })
+
+  it('counts attended days against elapsed days, including today', () => {
+    const stats = gymYearStats({
+      '2026-10-05': 'full',
+      '2026-10-06': 'relax',
+      '2026-10-07': 'missed',
+      '2026-10-10': 'full',
+    }, '2026-10-09')
+    expect(stats.attended).toBe(2)
+    expect(stats.elapsed).toBe(5)
+  })
+
+  it('shows zero elapsed days before the year starts', () => {
+    const stats = gymYearStats({}, '2026-10-04')
+    expect(stats.attended).toBe(0)
+    expect(stats.elapsed).toBe(0)
   })
 
   it('shows a final tally after the year ends', () => {
@@ -27,6 +45,7 @@ describe('gym year', () => {
     expect(stats.total).toBe(365)
     expect(stats.elapsed).toBe(365)
     expect(stats.full).toBe(1)
+    expect(stats.attended).toBe(1)
     expect(stats.missed).toBe(1)
     expect(stats.unrecorded).toBe(363)
     expect(stats.finished).toBe(true)

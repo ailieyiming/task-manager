@@ -33,6 +33,7 @@ export function GymPage() {
   }, [])
 
   const stats = gymYearStats(checkIns, today)
+  const attendancePercent = stats.elapsed === 0 ? 0 : Math.round((stats.attended / stats.elapsed) * 100)
   const selectedStatus = checkIns[selectedDate]
   const selectedIsOpen = canCheckIn(selectedDate, today)
   const firstDayOffset = (month.getDay() + 6) % 7
@@ -80,11 +81,11 @@ export function GymPage() {
         </div>
         <section className="rounded-2xl bg-[#1e3a5f] text-white p-5 shadow-sm">
           <div className="flex items-center gap-2 text-[13px] text-white/75"><Dumbbell size={16} /> One year of movement</div>
-          <p className="text-[23px] font-semibold mt-2">{stats.finished ? 'Your year in review' : today < GYM_START ? 'Starts 5 October' : `Day ${stats.elapsed} of ${stats.total}`}</p>
-          <div className="h-2 bg-white/20 rounded-full mt-4 overflow-hidden">
-            <div className="h-full bg-[#d8bd82] rounded-full" style={{ width: `${Math.round((stats.elapsed / stats.total) * 100)}%` }} />
+          <p className="text-[23px] font-semibold mt-2">Gym days: {stats.attended} / {stats.elapsed}</p>
+          <div className="h-2 bg-white/20 rounded-full mt-4 overflow-hidden" role="progressbar" aria-label="Gym days out of elapsed days" aria-valuemin={0} aria-valuemax={stats.elapsed || 1} aria-valuenow={stats.attended}>
+            <div className="h-full bg-[#d8bd82] rounded-full" style={{ width: `${attendancePercent}%` }} />
           </div>
-          <p className="text-[12px] text-white/70 mt-2">{stats.recorded} days recorded · {stats.unrecorded} past days unrecorded</p>
+          <p className="text-[12px] text-white/70 mt-2">Full + Relax count as gym days · {attendancePercent}% of days so far</p>
         </section>
 
         <section className="grid grid-cols-3 gap-2" aria-label="Gym year totals">
