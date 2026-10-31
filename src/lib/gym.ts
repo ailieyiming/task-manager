@@ -7,6 +7,34 @@ export const GYM_TOTAL_DAYS = differenceInCalendarDays(parseLocalDate(GYM_END), 
 
 export type GymStatus = 'full' | 'relax' | 'missed'
 export type GymCheckIns = Record<string, GymStatus>
+export interface GymExercise {
+  id: string
+  name: string
+  sets?: number
+  reps?: number
+  weightKg?: number
+  note?: string
+}
+export type GymWorkouts = Record<string, GymExercise[]>
+export interface GymDayRecord {
+  status: GymStatus
+  exercises: GymExercise[]
+}
+
+export function isGymExercise(value: unknown): value is GymExercise {
+  if (!value || typeof value !== 'object') return false
+  const exercise = value as Partial<GymExercise>
+  return typeof exercise.id === 'string' && exercise.id.length > 0 && exercise.id.length <= 50 &&
+    typeof exercise.name === 'string' && exercise.name.trim().length > 0 && exercise.name.length <= 100 &&
+    (exercise.sets === undefined || (Number.isInteger(exercise.sets) && exercise.sets >= 1 && exercise.sets <= 1000)) &&
+    (exercise.reps === undefined || (Number.isInteger(exercise.reps) && exercise.reps >= 1 && exercise.reps <= 1000)) &&
+    (exercise.weightKg === undefined || (typeof exercise.weightKg === 'number' && Number.isFinite(exercise.weightKg) && exercise.weightKg >= 0 && exercise.weightKg <= 10000)) &&
+    (exercise.note === undefined || (typeof exercise.note === 'string' && exercise.note.length <= 500))
+}
+
+export function parseGymExercises(value: unknown): GymExercise[] {
+  return Array.isArray(value) ? value.filter(isGymExercise) : []
+}
 
 export function isGymStatus(value: unknown): value is GymStatus {
   return value === 'full' || value === 'relax' || value === 'missed'

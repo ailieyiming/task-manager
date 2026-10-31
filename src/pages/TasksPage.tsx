@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { ArrowLeft, ChevronDown, ChevronRight, Cloud, Plus, RefreshCw, Repeat2, Search, Trash2, X } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronRight, Cloud, Dumbbell, Plus, RefreshCw, Repeat2, Search, Trash2, X } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -17,10 +17,16 @@ import { useAppStore } from '../store/app'
 import { TaskCard } from '../components/tasks/TaskCard'
 import { TaskForm } from '../components/tasks/TaskForm'
 import { DailyQuote } from '../components/tasks/DailyQuote'
+import { gymYearStats } from '../lib/gym'
+import { refreshGymSync } from '../lib/gymSync'
+import { useGymStore } from '../store/gym'
 import type { Task } from '../store/types'
 
 export function TasksPage({ allTasksPage = false }: { allTasksPage?: boolean }) {
   const { tasks, overrides, orderedTaskIds, reorder, hasHydrated, purgeOldCompleted, deleteTask } = useTasksStore()
+  const gymCheckIns = useGymStore(state => state.checkIns)
+  const gymHasHydrated = useGymStore(state => state.hasHydrated)
+  const gymSyncMode = useGymStore(state => state.syncMode)
   const [showForm, setShowForm] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const viewMode = allTasksPage ? 'all' : 'today'
@@ -47,6 +53,7 @@ export function TasksPage({ allTasksPage = false }: { allTasksPage?: boolean }) 
 
   const refresh = useCallback(() => {
     purgeOldCompleted()
+    void refreshGymSync()
     setSpinning(true)
     setToday(localToday())
     setTimeout(() => setSpinning(false), 600)
@@ -71,6 +78,7 @@ export function TasksPage({ allTasksPage = false }: { allTasksPage?: boolean }) 
 
   const completed = todaysTasks.filter(t => isCompleted(t, overrides, today))
   const remaining = todaysTasks.filter(t => !isCompleted(t, overrides, today))
+  const gymStats = gymYearStats(gymCheckIns, today)
 
   // All Tasks does not list one-time tasks with past dates.
   const allTasks = useMemo(() => {
@@ -209,6 +217,13 @@ export function TasksPage({ allTasksPage = false }: { allTasksPage?: boolean }) 
         {viewMode === 'today' ? (
           <>
             <DailyQuote date={today} />
+            {gymHasHydrated && (gymSyncMode !== 'connecting' || Object.keys(gymCheckIns).length > 0) && (
+              <button type="button" onClick={() => setTab('gym')} className="w-full min-h-12 flex items-center gap-3 rounded-xl border border-[#1a4731]/15 bg-[#1a4731]/5 px-3 text-left" aria-label={`Open Gym, ${gymStats.attended} gym days out of ${gymStats.elapsed} days so far`}>
+                <Dumbbell size={18} className="flex-shrink-0 text-[#1a4731]" />
+                <span className="flex-1 text-[13px] text-[#1a4731]">Gym days <strong className="text-[16px]">{gymStats.attended}</strong> <span className="text-stone-500">/ {gymStats.elapsed} days so far</span></span>
+                <ChevronRight size={17} className="flex-shrink-0 text-[#1a4731]" />
+              </button>
+            )}
             <div className="flex items-center justify-between pt-1">
               <h2 className="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Today</h2>
               <button type="button" onClick={openAllTasks} className="min-h-10 flex items-center gap-1 text-[13px] font-medium text-[#1e3a5f]" aria-label={`Open All Tasks, ${allTasks.length} tasks`}>

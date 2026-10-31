@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, Cloud, CloudOff, Dumbbell, RefreshCw } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Cloud, CloudOff, Dumbbell, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { formatDate, formatDisplay, localToday, parseLocalDate } from '../lib/date'
-import { canCheckIn, GYM_END, GYM_START, gymYearStats, type GymStatus } from '../lib/gym'
+import { canCheckIn, GYM_END, GYM_START, gymYearStats, type GymExercise, type GymStatus } from '../lib/gym'
 import { useGymStore } from '../store/gym'
 import { refreshGymSync } from '../lib/gymSync'
+import { GymExerciseForm } from '../components/gym/GymExerciseForm'
 
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const choices: { status: GymStatus; label: string; active: string }[] = [
@@ -18,11 +19,13 @@ const monthOf = (date: string) => {
 }
 
 export function GymPage() {
-  const { checkIns, hasHydrated, syncMode, setCheckIn, clearCheckIn } = useGymStore()
+  const { checkIns, workouts, hasHydrated, syncMode, setCheckIn, clearCheckIn, saveExercise, deleteExercise } = useGymStore()
   const [today, setToday] = useState(localToday)
   const initialDate = today < GYM_START ? GYM_START : today > GYM_END ? GYM_END : today
   const [month, setMonth] = useState(() => monthOf(initialDate))
   const [selectedDate, setSelectedDate] = useState(initialDate)
+  const [exerciseFormOpen, setExerciseFormOpen] = useState(false)
+  const [editingExercise, setEditingExercise] = useState<GymExercise | null>(null)
 
   useEffect(() => {
     const refreshDate = () => {
@@ -35,6 +38,7 @@ export function GymPage() {
   const stats = gymYearStats(checkIns, today)
   const attendancePercent = stats.elapsed === 0 ? 0 : Math.round((stats.attended / stats.elapsed) * 100)
   const selectedStatus = checkIns[selectedDate]
+  const selectedExercises = workouts[selectedDate] ?? []
   const selectedIsOpen = canCheckIn(selectedDate, today)
   const firstDayOffset = (month.getDay() + 6) % 7
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()
@@ -151,18 +155,63 @@ export function GymPage() {
               <p className="text-[13px] text-stone-500 mt-1">{selectedStatus ? 'Your choice is saved. You can change it.' : 'How was your gym day?'}</p>
               <div className="grid grid-cols-3 gap-2 mt-4">
                 {choices.map(({ status, label, active }) => (
-                  <button key={status} type="button" onClick={() => setCheckIn(selectedDate, status)} aria-pressed={selectedStatus === status}
+                  <button key={status} type="button" onClick={() => {
+                    if (status === 'missed' && selectedExercises.length > 0 && !confirm('Mark as Didn\'t go and remove this day\'s exercise records?')) return
+                    setCheckIn(selectedDate, status)
+                  }} aria-pressed={selectedStatus === status}
                     className={`min-h-12 rounded-xl border text-[13px] font-medium ${selectedStatus === status ? active : 'border-stone-200 bg-white text-stone-600'}`}>{label}</button>
                 ))}
               </div>
-              {selectedStatus && <button type="button" onClick={() => clearCheckIn(selectedDate)} className="mt-3 text-[12px] text-stone-400">Clear entry</button>}
+              {selectedStatus && <button type="button" onClick={() => {
+                if (selectedExercises.length > 0 && !confirm('Clear this check-in and all exercise records for this day?')) return
+                clearCheckIn(selectedDate)
+              }} className="mt-3 text-[12px] text-stone-400">Clear entry</button>}
             </>
           ) : (
             <p className="text-[13px] text-stone-500 mt-2">{selectedDate > today ? 'This day is not here yet.' : 'Check-ins start on 5 October 2026.'}</p>
           )}
         </section>
+        {selectedIsOpen && (selectedStatus === 'full' || selectedStatus === 'relax') && (
+          <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm" aria-label="Exercise log">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-[16px] font-semibold text-stone-900">What you did</h2>
+                <p className="text-[12px] text-stone-500">{selectedExercises.length} exercise{selectedExercises.length === 1 ? '' : 's'} · {formatDisplay(selectedDate)}</p>
+              </div>
+              <button type="button" onClick={() => { setEditingExercise(null); setExerciseFormOpen(true) }} className="min-h-10 flex items-center gap-1 rounded-xl bg-[#1e3a5f] px-3 text-[13px] font-medium text-white"><Plus size={16} /> Add</button>
+            </div>
+            {selectedExercises.length === 0 ? (
+              <p className="mt-4 text-[13px] text-stone-500">Add what you did at the gym. You can edit it later.</p>
+            ) : (
+              <div className="mt-3 divide-y divide-stone-100">
+                {selectedExercises.map(exercise => (
+                  <div key={exercise.id} className="flex items-start gap-2 py-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-medium text-stone-900 break-words">{exercise.name}</p>
+                      {(exercise.sets !== undefined || exercise.reps !== undefined || exercise.weightKg !== undefined) && (
+                        <p className="text-[12px] text-stone-600 mt-0.5">
+                          {[exercise.sets !== undefined ? `${exercise.sets} sets` : null, exercise.reps !== undefined ? `${exercise.reps} reps` : null, exercise.weightKg !== undefined ? `${exercise.weightKg} kg` : null].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                      {exercise.note && <p className="text-[12px] text-stone-500 mt-1 whitespace-pre-wrap break-words">{exercise.note}</p>}
+                    </div>
+                    <button type="button" onClick={() => { setEditingExercise(exercise); setExerciseFormOpen(true) }} aria-label={`Edit ${exercise.name}`} className="w-9 h-9 flex-shrink-0 flex items-center justify-center text-stone-500"><Pencil size={16} /></button>
+                    <button type="button" onClick={() => { if (confirm(`Remove ${exercise.name}?`)) deleteExercise(selectedDate, exercise.id) }} aria-label={`Remove ${exercise.name}`} className="w-9 h-9 flex-shrink-0 flex items-center justify-center text-stone-400"><Trash2 size={16} /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
         <p className="text-[12px] text-stone-400 px-1 pb-4">Unrecorded days stay separate from “Didn't go” in your year-end totals.</p>
       </div>
+      {exerciseFormOpen && (
+        <GymExerciseForm
+          exercise={editingExercise}
+          onSave={exercise => saveExercise(selectedDate, exercise)}
+          onClose={() => { setExerciseFormOpen(false); setEditingExercise(null) }}
+        />
+      )}
     </div>
   )
 }

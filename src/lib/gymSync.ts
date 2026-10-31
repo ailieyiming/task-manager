@@ -1,6 +1,6 @@
 import { get as idbGet, set as idbSet } from 'idb-keyval'
 import { useGymStore } from '../store/gym'
-import { isGymDate, isGymStatus, type GymCheckIns, type GymStatus } from './gym'
+import { isGymDate, isGymStatus, parseGymExercises, type GymCheckIns, type GymWorkouts } from './gym'
 import { supabase } from './supabase'
 
 const IMPORTED_KEY = 'task-manager-gym-shared-imported'
@@ -13,26 +13,29 @@ class GymSyncController {
   private interval: ReturnType<typeof setInterval> | null = null
   private unsubscribe: (() => void) | null = null
 
-  private async readRemote(): Promise<GymCheckIns> {
+  private async readRemote(): Promise<{ checkIns: GymCheckIns; workouts: GymWorkouts }> {
     if (!supabase) throw new Error('Supabase is not configured.')
-    const { data, error } = await supabase.from('gym_checkins').select('day, status')
+    const { data, error } = await supabase.from('gym_checkins').select('day, status, exercises')
     if (error) throw error
     const checkIns: GymCheckIns = {}
+    const workouts: GymWorkouts = {}
     for (const row of data ?? []) {
       if (!isGymDate(row.day) || !isGymStatus(row.status)) throw new Error('Invalid gym record in cloud.')
       checkIns[row.day] = row.status
+      const exercises = parseGymExercises(row.exercises)
+      if (exercises.length) workouts[row.day] = exercises
     }
-    return checkIns
+    return { checkIns, workouts }
   }
 
   private async flushPending() {
     if (!supabase) throw new Error('Supabase is not configured.')
-    for (const [day, status] of Object.entries(useGymStore.getState().pending)) {
-      const result = status === null
+    for (const [day, record] of Object.entries(useGymStore.getState().pending)) {
+      const result = record === null
         ? await supabase.from('gym_checkins').delete().eq('day', day)
-        : await supabase.from('gym_checkins').upsert({ day, status, updated_at: new Date().toISOString() }, { onConflict: 'day' })
+        : await supabase.from('gym_checkins').upsert({ day, status: record.status, exercises: record.exercises, updated_at: new Date().toISOString() }, { onConflict: 'day' })
       if (result.error) throw result.error
-      useGymStore.getState().clearPending(day, status as GymStatus | null)
+      useGymStore.getState().clearPending(day, record)
     }
   }
 
