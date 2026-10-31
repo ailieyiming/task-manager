@@ -1,4 +1,4 @@
-import { differenceInCalendarDays } from 'date-fns'
+import { differenceInCalendarDays, subDays } from 'date-fns'
 import { formatDate, localToday, parseLocalDate } from './date'
 
 export const GYM_START = '2026-10-05'
@@ -47,6 +47,22 @@ export function isGymDate(date: string): boolean {
 
 export function canCheckIn(date: string, today = localToday()): boolean {
   return isGymDate(date) && date <= today
+}
+
+export function gymCurrentStreak(checkIns: GymCheckIns, today = localToday()): number {
+  if (!isGymDate(today)) return 0
+  const attended = (date: string) => checkIns[date] === 'full' || checkIns[date] === 'relax'
+  let date = today
+  if (!attended(date)) {
+    if (checkIns[date] === 'missed') return 0
+    date = formatDate(subDays(parseLocalDate(date), 1))
+  }
+  let streak = 0
+  while (date >= GYM_START && attended(date)) {
+    streak += 1
+    date = formatDate(subDays(parseLocalDate(date), 1))
+  }
+  return streak
 }
 
 export function gymYearStats(checkIns: GymCheckIns, today = localToday()) {

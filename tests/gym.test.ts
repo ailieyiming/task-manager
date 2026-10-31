@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { canCheckIn, GYM_TOTAL_DAYS, gymYearStats } from '../src/lib/gym'
+import { canCheckIn, GYM_TOTAL_DAYS, gymCurrentStreak, gymYearStats } from '../src/lib/gym'
 
 describe('gym year', () => {
   it('covers exactly one year from 5 Oct 2026 through 4 Oct 2027', () => {
@@ -49,5 +49,30 @@ describe('gym year', () => {
     expect(stats.missed).toBe(1)
     expect(stats.unrecorded).toBe(363)
     expect(stats.finished).toBe(true)
+  })
+})
+
+describe('gym current streak', () => {
+  it('counts full and relax on consecutive calendar days', () => {
+    const checkIns = {
+      '2026-10-30': 'full' as const,
+      '2026-10-31': 'relax' as const,
+      '2026-11-01': 'full' as const,
+    }
+    expect(gymCurrentStreak(checkIns, '2026-11-01')).toBe(3)
+  })
+
+  it('keeps yesterday’s streak when today is not recorded yet', () => {
+    expect(gymCurrentStreak({ '2026-10-29': 'full', '2026-10-30': 'relax' }, '2026-10-31')).toBe(2)
+  })
+
+  it('ends the streak when today is marked missed or yesterday has no check-in', () => {
+    expect(gymCurrentStreak({ '2026-10-30': 'full', '2026-10-31': 'missed' }, '2026-10-31')).toBe(0)
+    expect(gymCurrentStreak({ '2026-10-29': 'full' }, '2026-10-31')).toBe(0)
+  })
+
+  it('does not count check-ins outside the gym year', () => {
+    expect(gymCurrentStreak({ '2026-10-05': 'full' }, '2026-10-04')).toBe(0)
+    expect(gymCurrentStreak({ '2026-10-04': 'full', '2026-10-05': 'relax' }, '2026-10-05')).toBe(1)
   })
 })
