@@ -15,6 +15,8 @@ const squat: GymExercise = { id: 'squat', name: 'Squat', sets: 3, reps: 8, weigh
 describe('gym exercise records', () => {
   test('accepts structured lifting data and ignores invalid cloud entries', () => {
     expect(isGymExercise(squat)).toBe(true)
+    expect(isGymExercise({ ...squat, weightKg: 1.25 })).toBe(true)
+    expect(isGymExercise({ ...squat, weightKg: 1.234 })).toBe(false)
     expect(parseGymExercises(null)).toEqual([])
     expect(parseGymExercises([squat, { id: 'bad', name: 'Squat', reps: -1 }])).toEqual([squat])
   })
@@ -33,6 +35,19 @@ describe('gym exercise records', () => {
     expect(useGymStore.getState().workouts[day]).toBeUndefined()
     useGymStore.getState().saveExercise(day, squat)
     expect(useGymStore.getState().workouts[day]).toBeUndefined()
+  })
+
+  test('saves multiple exercises on one day and loads them from cloud', () => {
+    const second = { ...squat, id: 'press', name: 'Press', weightKg: 1.25 }
+    useGymStore.setState({ checkIns: { [day]: 'full' }, workouts: {}, pending: {} })
+    useGymStore.getState().saveExercise(day, squat)
+    useGymStore.getState().saveExercise(day, second)
+    expect(useGymStore.getState().workouts[day]).toEqual([squat, second])
+    expect(useGymStore.getState().pending[day]).toEqual({ status: 'full', exercises: [squat, second] })
+
+    useGymStore.setState({ checkIns: {}, workouts: {}, pending: {} })
+    useGymStore.getState().applyRemote({ checkIns: { [day]: 'full' }, workouts: { [day]: parseGymExercises([squat, second]) } })
+    expect(useGymStore.getState().workouts[day]).toEqual([squat, second])
   })
 
   test('merges cloud records without losing an offline edit', () => {

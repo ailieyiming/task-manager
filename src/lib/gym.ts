@@ -28,7 +28,7 @@ export function isGymExercise(value: unknown): value is GymExercise {
     typeof exercise.name === 'string' && exercise.name.trim().length > 0 && exercise.name.length <= 100 &&
     (exercise.sets === undefined || (Number.isInteger(exercise.sets) && exercise.sets >= 1 && exercise.sets <= 1000)) &&
     (exercise.reps === undefined || (Number.isInteger(exercise.reps) && exercise.reps >= 1 && exercise.reps <= 1000)) &&
-    (exercise.weightKg === undefined || (typeof exercise.weightKg === 'number' && Number.isFinite(exercise.weightKg) && exercise.weightKg >= 0 && exercise.weightKg <= 10000)) &&
+    (exercise.weightKg === undefined || (typeof exercise.weightKg === 'number' && Number.isFinite(exercise.weightKg) && exercise.weightKg >= 0 && exercise.weightKg <= 10000 && Math.abs(exercise.weightKg * 100 - Math.round(exercise.weightKg * 100)) < 1e-8)) &&
     (exercise.note === undefined || (typeof exercise.note === 'string' && exercise.note.length <= 500))
 }
 

@@ -178,7 +178,7 @@ export function GymPage() {
                 <h2 className="text-[16px] font-semibold text-stone-900">What you did</h2>
                 <p className="text-[12px] text-stone-500">{selectedExercises.length} exercise{selectedExercises.length === 1 ? '' : 's'} · {formatDisplay(selectedDate)}</p>
               </div>
-              <button type="button" onClick={() => { setEditingExercise(null); setExerciseFormOpen(true) }} className="min-h-10 flex items-center gap-1 rounded-xl bg-[#1e3a5f] px-3 text-[13px] font-medium text-white"><Plus size={16} /> Add</button>
+              <button type="button" onClick={() => { setEditingExercise(null); setExerciseFormOpen(true) }} className="min-h-10 flex items-center gap-1 rounded-xl bg-[#1e3a5f] px-3 text-[13px] font-medium text-white"><Plus size={16} /> Add exercise</button>
             </div>
             {selectedExercises.length === 0 ? (
               <p className="mt-4 text-[13px] text-stone-500">Add what you did at the gym. You can edit it later.</p>
@@ -190,7 +190,7 @@ export function GymPage() {
                       <p className="text-[14px] font-medium text-stone-900 break-words">{exercise.name}</p>
                       {(exercise.sets !== undefined || exercise.reps !== undefined || exercise.weightKg !== undefined) && (
                         <p className="text-[12px] text-stone-600 mt-0.5">
-                          {[exercise.sets !== undefined ? `${exercise.sets} sets` : null, exercise.reps !== undefined ? `${exercise.reps} reps` : null, exercise.weightKg !== undefined ? `${exercise.weightKg} kg` : null].filter(Boolean).join(' · ')}
+                          {[exercise.sets !== undefined ? `${exercise.sets} sets` : null, exercise.reps !== undefined ? `${exercise.reps} reps` : null, exercise.weightKg !== undefined ? `${exercise.weightKg.toFixed(2)} kg` : null].filter(Boolean).join(' · ')}
                         </p>
                       )}
                       {exercise.note && <p className="text-[12px] text-stone-500 mt-1 whitespace-pre-wrap break-words">{exercise.note}</p>}

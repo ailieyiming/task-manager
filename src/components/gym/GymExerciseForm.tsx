@@ -28,7 +28,16 @@ export function GymExerciseForm({ exercise, onSave, onClose }: Props) {
     }
     if (!isGymExercise(next)) return
     onSave(next)
-    onClose()
+    const addAnother = !exercise && (event.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'another'
+    if (addAnother) {
+      setName('')
+      setSets('')
+      setReps('')
+      setWeight('')
+      setNote('')
+    } else {
+      onClose()
+    }
   }
 
   return (
@@ -50,14 +59,15 @@ export function GymExerciseForm({ exercise, onSave, onClose }: Props) {
               <input type="number" inputMode="numeric" min="1" max="1000" step="1" value={reps} onChange={event => setReps(event.target.value)} placeholder="—" className="mt-1 w-full min-h-11 rounded-xl border border-stone-200 px-3 text-[15px] outline-none focus:border-[#1e3a5f]" />
             </label>
             <label className="block text-[13px] font-medium text-stone-700">kg
-              <input type="number" inputMode="decimal" min="0" max="10000" step="0.1" value={weight} onChange={event => setWeight(event.target.value)} placeholder="—" className="mt-1 w-full min-h-11 rounded-xl border border-stone-200 px-3 text-[15px] outline-none focus:border-[#1e3a5f]" />
+              <input type="number" inputMode="decimal" min="0" max="10000" step="0.01" value={weight} onChange={event => setWeight(event.target.value)} placeholder="—" className="mt-1 w-full min-h-11 rounded-xl border border-stone-200 px-3 text-[15px] outline-none focus:border-[#1e3a5f]" />
             </label>
           </div>
-          <p className="text-[12px] text-stone-500">Sets, reps and weight are optional. Add another entry if the weight or reps change.</p>
+          <p className="text-[12px] text-stone-500">Sets, reps and weight are optional. You can save more than one exercise for this day.</p>
           <label className="block text-[13px] font-medium text-stone-700">Notes (optional)
             <textarea maxLength={500} rows={3} value={note} onChange={event => setNote(event.target.value)} placeholder="e.g. 20 min, how it felt" className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2.5 text-[15px] outline-none focus:border-[#1e3a5f]" />
           </label>
           <button type="submit" className="w-full min-h-12 rounded-xl bg-[#1e3a5f] text-white text-[15px] font-semibold">Save exercise</button>
+          {!exercise && <button type="submit" value="another" className="w-full min-h-11 rounded-xl border border-[#1e3a5f]/25 bg-white text-[#1e3a5f] text-[14px] font-semibold">Save &amp; add another</button>}
         </form>
       </div>
     </div>

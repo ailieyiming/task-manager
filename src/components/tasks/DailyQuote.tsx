@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Bookmark, Check, X } from 'lucide-react'
-import { isActiveQuote, quoteForDate, quoteMeaning, quoteSource, quoteSourceUrl, quotes } from '../../lib/quotes'
+import { isActiveQuote, isRotatingQuote, quoteForDate, quoteMeaning, quoteSource, quoteSourceUrl, quotes } from '../../lib/quotes'
 import { useQuotesStore } from '../../store/quotes'
 
 interface Props {
@@ -16,7 +16,7 @@ export function DailyQuote({ date }: Props) {
   }
 
   const acceptedId = acceptedByDate[date]
-  const acceptedQuote = isActiveQuote(acceptedId) && !rejectedIds.includes(acceptedId)
+  const acceptedQuote = isRotatingQuote(acceptedId) && !rejectedIds.includes(acceptedId)
     ? { id: acceptedId, text: quotes[acceptedId]!, source: quoteSource(acceptedId), meaning: quoteMeaning(acceptedId) }
     : null
   // Older saved quotes have no acceptance date; keep them out of the rotation.

@@ -444,6 +444,7 @@ const newStrategyQuotes: readonly { text: string; source?: string; meaning?: str
 const classicMeanings: Record<number, string> = {
   105: '先看清自己和对方，再决定怎么行动。',
   106: '先做好准备，再争取结果。',
+  107: '用谋略解决冲突，比正面硬碰更好。',
   108: '有准备的人，比毫无准备的人更有优势。',
   109: '先稳住自己的位置，再等待合适的机会。',
   110: '意志不坚定，判断就难清楚；说话不守信，行动就难有结果。',
@@ -451,24 +452,33 @@ const classicMeanings: Record<number, string> = {
   114: '做有益的事，减少有害的事。',
   158: '看清对方尚未准备好的地方，再选择行动时机。',
   155: '先了解真实情况，判断才更可靠。',
+  156: '带领他人需要智慧、诚信、仁心、勇气和纪律。',
+  157: '根据实际利益和局势调整方法。',
   159: '多做准备和判断，胜算才更高。',
   160: '重视有效的结果，不把事情无谓拖长。',
   161: '先靠判断和策略解决问题。',
   162: '知道何时该行动、何时该停下，才更容易成功。',
   163: '方向一致，行动才更有力。',
   164: '先把能控制的部分做好，机会再看外部条件。',
+  165: '可以看出机会，但不能强迫它出现。',
+  166: '先让自己站稳，再争取胜利。',
   167: '用稳妥的方法站住脚，再用灵活的方法突破。',
+  168: '常规和灵活的方法可以交替使用。',
   169: '借助合适的形势，不把全部压力压在个人身上。',
   170: '尽量掌握主动，不总被别人牵着走。',
   171: '避开对方强处，寻找可以突破的地方。',
   172: '方法要随实际情况调整。',
+  173: '处处平均用力，就会处处力量不足。',
   174: '面对混乱时，先稳住自己的秩序和情绪。',
   175: '保存精力，等到有利的时机再行动。',
   176: '做决定时，同时看收益和风险。',
   177: '不要只盼风险不来；先做好应对准备。',
   178: '决定进退时，先看实际责任，不被虚名或指责左右。',
   179: '有实际好处才行动；没有好处就停止。',
+  180: '先衡量对方、风险和距离，再作决定。',
+  181: '环境不同，行动方法也要不同。',
   182: '没有利益不轻举妄动；没有把握不贸然投入。',
+  183: '做重要决定时要谨慎，不能意气用事。',
   184: '预先了解情况，要靠调查，而不是靠占卜。',
   185: '学到的东西，要靠行动落实。',
   186: '基础未稳时，先不要追求表面的成果。',
@@ -534,46 +544,7 @@ export function isActiveQuote(id: number): boolean {
   return Number.isInteger(id) && id >= 0 && id < quotes.length && quotes[id] !== null
 }
 
-// Rotate only the lines that match the user's saved themes. Keep the complete
-// catalog and its IDs intact so saved and rejected choices stay valid.
-const preferredMao = new Set([
-  '排除万难，去争取胜利。',
-  '没有调查，没有发言权。',
-  '调查就是解决问题。',
-  '真理的标准只能是社会的实践。',
-  '要有目的地去研究。',
-  '言必信，行必果。',
-  '干就是学习。',
-  '自己动手，克服困难。',
-  '一万年太久，只争朝夕。',
-  '敌军围困万千重，我自岿然不动。',
-  '雄关漫道真如铁，而今迈步从头越。',
-  '实事求是。',
-])
-const preferredSunzi = new Set([
-  '知之者胜，不知者不胜。',
-  '多算胜，少算不胜。',
-  '先知者，不可取于鬼神。',
-  '兵贵胜，不贵久。',
-  '知彼知己，百战不殆。',
-  '胜兵先胜而后求战。',
-  '先为不可胜，以待敌之可胜。',
-  '知可以战与不可以战者胜。',
-  '不可胜在己，可胜在敌。',
-  '致人而不致于人。',
-  '以治待乱，以静待哗。',
-  '合于利而动，不合于利而止。',
-])
-const preferredMozi = new Set([
-  '欲天下之治，而恶其乱。',
-  '用财不费，民德不劳。',
-  '言无务为多而务为智。',
-  '志不强者智不达，言不信者行不果。',
-  '士虽有学，而行为本焉。',
-  '置本不安者，无务丰末。',
-  '君子力事日强。',
-  '加费不加民利则止。',
-])
+// Keep all historic IDs and saved choices. Only these two groups rotate daily.
 const preferredEnglish = new Set([
   'I can be hopeful without demanding instant proof.',
   'I make grounded decisions that support my future.',
@@ -607,46 +578,35 @@ const preferredEnglish = new Set([
   'I hold my ground.',
   'I take the next step today.',
   'I recover and move forward.',
+  ...powerEnglishQuotes,
 ])
-const maoIds = quotes.flatMap((text, id) => text && preferredMao.has(text) ? [id] : [])
-const sunziIds = quotes.flatMap((text, id) => text && preferredSunzi.has(text) ? [id] : [])
-const moziIds = quotes.flatMap((text, id) => text && preferredMozi.has(text) ? [id] : [])
-const englishIds = quotes.flatMap((text, id) => text && preferredEnglish.has(text) ? [id] : [])
-const preferredStrategy = new Set([
-  '攻其无备，出其不意。',
-  '上兵伐谋。',
-  '避实而击虚。',
-  '无恃其不来，恃吾有以待之。',
-  '非利不动，非得不用，非危不战。',
-  '智者之虑，必杂于利害。',
-  '进不求名，退不避罪。',
-  '举公义，辟私怨。',
-  '官无常贵，而民无终贱。',
-  '有能则举之，无能则下之。',
-])
-const strategyIds = [
-  ...quotes.flatMap((text, id) => text && preferredStrategy.has(text) ? [id] : []),
-  ...newStrategyQuotes.map((_, index) => newStrategyStart + index),
-]
-const allianceIds = allianceQuotes.map((_, index) => allianceStart + index)
-const liBaiIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('李白') ? [id] : [])
-const allActiveIds = [...maoIds, ...englishIds, ...strategyIds, ...sunziIds, ...moziIds, ...allianceIds, ...liBaiIds]
+const sunziIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('《孙子兵法') ? [id] : [])
+const seenEnglish = new Set<string>()
+const englishIds = quotes.flatMap((text, id) => {
+  if (!text || !preferredEnglish.has(text) || seenEnglish.has(text)) return []
+  seenEnglish.add(text)
+  return [id]
+})
+const allRotatingIds = [...sunziIds, ...englishIds]
+const rotatingIdSet = new Set(allRotatingIds)
+export function isRotatingQuote(id: number): boolean {
+  return isActiveQuote(id) && rotatingIdSet.has(id)
+}
 const scheduleStart = Math.floor(Date.UTC(2025, 0, 1) / 86_400_000)
 const noRepeatDays = 60
-// Each 20-day cycle: 4 English, 4 strategy, 3 Mao, 3 Sunzi,
-// 2 Mozi, 2 alliance, and 2 Li Bai quotes.
+// Each 20-day cycle: 11 Sunzi, 9 English.
 const categoryCycle = [
-  'english', 'mao', 'strategy', 'sunzi', 'mozi',
-  'english', 'alliance', 'strategy', 'liBai', 'sunzi',
-  'english', 'mao', 'strategy', 'mozi', 'alliance',
-  'english', 'sunzi', 'liBai', 'strategy', 'mao',
+  'sunzi', 'english', 'sunzi', 'english', 'sunzi',
+  'english', 'sunzi', 'english', 'sunzi', 'english',
+  'sunzi', 'english', 'sunzi', 'english', 'sunzi',
+  'english', 'sunzi', 'english', 'sunzi', 'sunzi',
 ] as const
-const categoryPools = { mao: maoIds, english: englishIds, strategy: strategyIds, sunzi: sunziIds, mozi: moziIds, alliance: allianceIds, liBai: liBaiIds }
+const categoryPools = { sunzi: sunziIds, english: englishIds }
 
 function quoteIdForDay(dayNumber: number, rejected: Set<number>, recent: Set<number>): number | null {
   const category = categoryCycle[((dayNumber - scheduleStart) % categoryCycle.length + categoryCycle.length) % categoryCycle.length]
   const pools = [categoryPools[category]]
-  for (const pool of [...pools, allActiveIds]) {
+  for (const pool of [...pools, allRotatingIds]) {
     if (pool.length === 0) continue
     const firstIndex = (Math.imul(dayNumber, 2654435761) >>> 0) % pool.length
     for (let offset = 0; offset < pool.length; offset++) {
@@ -655,7 +615,7 @@ function quoteIdForDay(dayNumber: number, rejected: Set<number>, recent: Set<num
     }
   }
   // A repeat is unavoidable if fewer than 60 usable quotes remain.
-  return allActiveIds.find((id) => !rejected.has(id)) ?? null
+  return allRotatingIds.find((id) => !rejected.has(id)) ?? null
 }
 
 export function quoteForDate(date: string, rejectedIds: number[], acceptedByDate: Record<string, number> = {}) {
