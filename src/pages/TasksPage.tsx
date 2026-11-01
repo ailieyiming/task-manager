@@ -17,7 +17,7 @@ import { useAppStore } from '../store/app'
 import { TaskCard } from '../components/tasks/TaskCard'
 import { TaskForm } from '../components/tasks/TaskForm'
 import { DailyQuote } from '../components/tasks/DailyQuote'
-import { gymCurrentStreak } from '../lib/gym'
+import { gymYearStats } from '../lib/gym'
 import { refreshGymSync } from '../lib/gymSync'
 import { useGymStore } from '../store/gym'
 import type { Task } from '../store/types'
@@ -78,7 +78,7 @@ export function TasksPage({ allTasksPage = false }: { allTasksPage?: boolean }) 
 
   const completed = todaysTasks.filter(t => isCompleted(t, overrides, today))
   const remaining = todaysTasks.filter(t => !isCompleted(t, overrides, today))
-  const gymStreak = gymCurrentStreak(gymCheckIns, today)
+  const gymDays = gymYearStats(gymCheckIns, today).attended
 
   // All Tasks does not list one-time tasks with past dates.
   const allTasks = useMemo(() => {
@@ -218,9 +218,9 @@ export function TasksPage({ allTasksPage = false }: { allTasksPage?: boolean }) 
           <>
             <DailyQuote date={today} />
             {gymHasHydrated && (gymSyncMode !== 'connecting' || Object.keys(gymCheckIns).length > 0) && (
-              <button type="button" onClick={() => setTab('gym')} className="w-full min-h-12 flex items-center gap-3 rounded-xl border border-[#1a4731]/15 bg-[#1a4731]/5 px-3 text-left" aria-label={`打开 Gym，已连续去 ${gymStreak} 天`}>
+              <button type="button" onClick={() => setTab('gym')} className="w-full min-h-12 flex items-center gap-3 rounded-xl border border-[#1a4731]/15 bg-[#1a4731]/5 px-3 text-left" aria-label={`打开 Gym，你已经持续去 ${gymDays} 天 gym`}>
                 <Dumbbell size={18} className="flex-shrink-0 text-[#1a4731]" />
-                <span className="flex-1 text-[13px] text-[#1a4731]">你已经连续去 <strong className="text-[16px]">{gymStreak}</strong> 天 gym</span>
+                <span className="flex-1 text-[13px] text-[#1a4731]">你已经持续去 <strong className="text-[16px]">{gymDays}</strong> 天 gym</span>
                 <ChevronRight size={17} className="flex-shrink-0 text-[#1a4731]" />
               </button>
             )}
