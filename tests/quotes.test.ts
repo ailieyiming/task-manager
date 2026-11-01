@@ -19,8 +19,8 @@ describe('daily quote catalog', () => {
     expect(sources.every(source => !source?.includes('道德经'))).toBe(true)
   })
 
-  test('rotates only Sunzi and English, with more Sunzi', () => {
-    const counts = { english: 0, sunzi: 0 }
+  test('rotates Sunzi, English, Mozi and Zhan Guo Ce, with more Sunzi', () => {
+    const counts = { english: 0, sunzi: 0, mozi: 0, alliance: 0 }
     for (let day = 0; day < 20; day++) {
       const date = new Date(Date.UTC(2026, 9, 19 + day)).toISOString().slice(0, 10)
       const quote = quoteForDate(date, [])!
@@ -29,13 +29,21 @@ describe('daily quote catalog', () => {
       if (source?.startsWith('《孙子兵法')) {
         counts.sunzi++
         expect(quoteMeaning(quote.id)).toBeTruthy()
+      } else if (source?.startsWith('《墨子')) {
+        counts.mozi++
+        expect(quoteMeaning(quote.id)).toBeTruthy()
+      } else if (source?.startsWith('《战国策')) {
+        counts.alliance++
+        expect(quoteMeaning(quote.id)).toBeTruthy()
       } else {
         expect(source).toBeUndefined()
         counts.english++
       }
     }
-    expect(counts).toEqual({ english: 9, sunzi: 11 })
+    expect(counts).toEqual({ english: 6, sunzi: 8, mozi: 4, alliance: 2 })
     expect(isRotatingQuote(105)).toBe(true)
+    expect(isRotatingQuote(110)).toBe(true)
+    expect(isRotatingQuote(377)).toBe(true)
     expect(isRotatingQuote(115)).toBe(false)
   })
 

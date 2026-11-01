@@ -544,7 +544,7 @@ export function isActiveQuote(id: number): boolean {
   return Number.isInteger(id) && id >= 0 && id < quotes.length && quotes[id] !== null
 }
 
-// Keep all historic IDs and saved choices. Only these two groups rotate daily.
+// Keep all historic IDs and saved choices. Only these four groups rotate daily.
 const preferredEnglish = new Set([
   'I can be hopeful without demanding instant proof.',
   'I make grounded decisions that support my future.',
@@ -581,27 +581,29 @@ const preferredEnglish = new Set([
   ...powerEnglishQuotes,
 ])
 const sunziIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('《孙子兵法') ? [id] : [])
+const moziIds = quotes.flatMap((text, id) => text && quoteSource(id)?.startsWith('《墨子') && quoteMeaning(id) ? [id] : [])
+const allianceIds = allianceQuotes.map((_, index) => allianceStart + index)
 const seenEnglish = new Set<string>()
 const englishIds = quotes.flatMap((text, id) => {
   if (!text || !preferredEnglish.has(text) || seenEnglish.has(text)) return []
   seenEnglish.add(text)
   return [id]
 })
-const allRotatingIds = [...sunziIds, ...englishIds]
+const allRotatingIds = [...sunziIds, ...englishIds, ...moziIds, ...allianceIds]
 const rotatingIdSet = new Set(allRotatingIds)
 export function isRotatingQuote(id: number): boolean {
   return isActiveQuote(id) && rotatingIdSet.has(id)
 }
 const scheduleStart = Math.floor(Date.UTC(2025, 0, 1) / 86_400_000)
 const noRepeatDays = 60
-// Each 20-day cycle: 11 Sunzi, 9 English.
+// Each 20-day cycle: 8 Sunzi, 6 English, 4 Mozi, 2 Zhan Guo Ce.
 const categoryCycle = [
-  'sunzi', 'english', 'sunzi', 'english', 'sunzi',
-  'english', 'sunzi', 'english', 'sunzi', 'english',
-  'sunzi', 'english', 'sunzi', 'english', 'sunzi',
-  'english', 'sunzi', 'english', 'sunzi', 'sunzi',
+  'sunzi', 'english', 'mozi', 'sunzi', 'english',
+  'alliance', 'sunzi', 'mozi', 'english', 'sunzi',
+  'mozi', 'english', 'sunzi', 'alliance', 'english',
+  'sunzi', 'mozi', 'english', 'sunzi', 'sunzi',
 ] as const
-const categoryPools = { sunzi: sunziIds, english: englishIds }
+const categoryPools = { sunzi: sunziIds, english: englishIds, mozi: moziIds, alliance: allianceIds }
 
 function quoteIdForDay(dayNumber: number, rejected: Set<number>, recent: Set<number>): number | null {
   const category = categoryCycle[((dayNumber - scheduleStart) % categoryCycle.length + categoryCycle.length) % categoryCycle.length]
