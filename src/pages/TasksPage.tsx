@@ -180,32 +180,27 @@ export function TasksPage({ allTasksPage = false }: { allTasksPage?: boolean }) 
               <h1 className="text-[18px] font-semibold text-stone-900">All Tasks</h1>
               <p className="text-[12px] text-stone-500">{matchingTasks.length} task{matchingTasks.length !== 1 ? 's' : ''} shown</p>
             </div>
+            <button type="button" onClick={() => setTab('cloud')} aria-label="Open cloud and account" title="Cloud and account" className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full text-stone-500 hover:bg-stone-100">
+              <Cloud size={18} />
+            </button>
             <button type="button" onClick={() => setShowForm(true)} aria-label="Add task" className="w-10 h-10 flex-shrink-0 bg-[#1e3a5f] rounded-full flex items-center justify-center text-white">
               <Plus size={20} strokeWidth={2.5} />
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
               <p className="text-[13px] text-stone-400">{displayDate}</p>
-              <p className="text-[15px] font-semibold text-stone-900">
-                {completed.length}/{todaysTasks.length} done
-                {todaysTasks.length > 0 && (
-                  <span className="ml-2 text-[13px] font-normal text-stone-400">
-                    · {Math.round((completed.length / todaysTasks.length) * 100)}%
-                  </span>
-                )}
-              </p>
+              {gymHasHydrated && (gymSyncMode !== 'connecting' || Object.keys(gymCheckIns).length > 0) && (
+                <button type="button" onClick={() => setTab('gym')} className="flex items-center gap-1.5 min-h-7 text-left text-[14px] font-semibold text-[#1a4731]" aria-label={`打开 Gym，你已经持续去 ${gymDays} 天 gym`}>
+                  <Dumbbell size={16} className="flex-shrink-0" aria-hidden="true" />
+                  <span>你已经持续去 {gymDays} 天 gym</span>
+                </button>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={() => setTab('cloud')} className="w-9 h-9 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100" aria-label="Open cloud and account" title="Cloud and account">
-                <Cloud size={18} />
-              </button>
-              <button type="button" onClick={refresh} className="w-9 h-9 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors" aria-label="Refresh date">
+            <div className="flex items-center flex-shrink-0">
+              <button type="button" onClick={refresh} className="w-10 h-10 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors" aria-label="Refresh date and gym records">
                 <RefreshCw size={17} className={spinning ? 'animate-spin' : ''} />
-              </button>
-              <button type="button" onClick={() => setShowForm(true)} className="w-9 h-9 bg-[#1e3a5f] rounded-full flex items-center justify-center text-white" aria-label="Add task">
-                <Plus size={20} strokeWidth={2.5} />
               </button>
             </div>
           </div>
@@ -217,19 +212,17 @@ export function TasksPage({ allTasksPage = false }: { allTasksPage?: boolean }) 
         {viewMode === 'today' ? (
           <>
             <DailyQuote date={today} />
-            {gymHasHydrated && (gymSyncMode !== 'connecting' || Object.keys(gymCheckIns).length > 0) && (
-              <button type="button" onClick={() => setTab('gym')} className="w-full min-h-12 flex items-center gap-3 rounded-xl border border-[#1a4731]/15 bg-[#1a4731]/5 px-3 text-left" aria-label={`打开 Gym，你已经持续去 ${gymDays} 天 gym`}>
-                <Dumbbell size={18} className="flex-shrink-0 text-[#1a4731]" />
-                <span className="flex-1 text-[13px] text-[#1a4731]">你已经持续去 <strong className="text-[16px]">{gymDays}</strong> 天 gym</span>
-                <ChevronRight size={17} className="flex-shrink-0 text-[#1a4731]" />
-              </button>
-            )}
             <div className="flex items-center justify-between pt-1">
               <h2 className="text-[12px] font-semibold uppercase tracking-wide text-stone-500">Today</h2>
-              <button type="button" onClick={openAllTasks} className="min-h-10 flex items-center gap-1 text-[13px] font-medium text-[#1e3a5f]" aria-label={`Open All Tasks, ${allTasks.length} tasks`}>
-                All tasks · {allTasks.length}
-                <ChevronRight size={17} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={openAllTasks} className="min-h-10 flex items-center gap-1 text-[13px] font-medium text-[#1e3a5f]" aria-label={`Open All Tasks, ${allTasks.length} tasks`}>
+                  All tasks · {allTasks.length}
+                  <ChevronRight size={17} />
+                </button>
+                <button type="button" onClick={() => setShowForm(true)} className="w-10 h-10 flex-shrink-0 bg-[#1e3a5f] rounded-full flex items-center justify-center text-white" aria-label="Add task">
+                  <Plus size={20} strokeWidth={2.5} />
+                </button>
+              </div>
             </div>
             {todaysTasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 text-center">
