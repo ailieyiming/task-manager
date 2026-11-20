@@ -1,22 +1,25 @@
 import { addDays, startOfWeek } from 'date-fns'
 import { formatDate, parseLocalDate } from './date'
 
-export interface GymPlanDay {
-  name: string
-  focus: string
-  details: string
-  kind: 'strength' | 'class' | 'recovery'
+export const GYM_WEEKLY_ITEMS = [
+  { id: 'lower_a', title: 'Glutes + legs', hint: 'Squat or leg press · hip thrust · core' },
+  { id: 'lower_b', title: 'Glutes + legs', hint: 'Romanian deadlift · step-up · core' },
+  { id: 'upper_a', title: 'Back + arms', hint: 'Row · pulldown · arm work' },
+  { id: 'upper_b', title: 'Back + arms', hint: 'Row · shoulder press · arm work' },
+  { id: 'pilates_a', title: 'Pilates or mobility', hint: 'Class or light movement' },
+  { id: 'pilates_b', title: 'Pilates or mobility', hint: 'Class or light movement' },
+  { id: 'walking', title: 'Walking', hint: 'Build toward 10,000 steps on most days' },
+] as const
+
+export type GymWeeklyItemId = typeof GYM_WEEKLY_ITEMS[number]['id']
+
+export function isGymWeeklyItemId(value: unknown): value is GymWeeklyItemId {
+  return GYM_WEEKLY_ITEMS.some(item => item.id === value)
 }
 
-export const GYM_PLAN: GymPlanDay[] = [
-  { name: 'Mon', focus: 'Glutes + legs A', details: 'Squat or leg press, hip thrust, split squat, core. Start with 2–3 sets of 8–12 reps.', kind: 'strength' },
-  { name: 'Tue', focus: 'Back + arms A', details: 'Row, lat pulldown, chest press, biceps and triceps. Start with 2–3 sets of 8–12 reps.', kind: 'strength' },
-  { name: 'Wed', focus: 'Pilates + walk', details: 'Pilates class or mobility. Walk at a comfortable pace.', kind: 'class' },
-  { name: 'Thu', focus: 'Glutes + legs B', details: 'Romanian deadlift, step-up, glute bridge, core. Start with 2–3 sets of 8–12 reps.', kind: 'strength' },
-  { name: 'Fri', focus: 'Back + arms B', details: 'Seated row, pulldown, shoulder press, arm work. Start with 2–3 sets of 8–12 reps.', kind: 'strength' },
-  { name: 'Sat', focus: 'Pilates + easy movement', details: 'Pilates class, light full-body movement, or a long easy walk.', kind: 'class' },
-  { name: 'Sun', focus: 'Recovery', details: 'Rest, stretch, or take an easy walk. No hard workout needed.', kind: 'recovery' },
-]
+export function parseGymWeeklyItems(value: unknown): GymWeeklyItemId[] {
+  return Array.isArray(value) ? [...new Set(value.filter(isGymWeeklyItemId))] : []
+}
 
 export function gymWeekStart(date: string): string {
   return formatDate(startOfWeek(parseLocalDate(date), { weekStartsOn: 1 }))
@@ -25,10 +28,6 @@ export function gymWeekStart(date: string): string {
 export function gymWeekDates(date: string): string[] {
   const start = parseLocalDate(gymWeekStart(date))
   return Array.from({ length: 7 }, (_, index) => formatDate(addDays(start, index)))
-}
-
-export function gymPlanForDate(date: string): GymPlanDay {
-  return GYM_PLAN[(parseLocalDate(date).getDay() + 6) % 7]
 }
 
 export interface GymWeeklyMetrics {

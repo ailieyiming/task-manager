@@ -2,7 +2,7 @@ import { get as idbGet, set as idbSet } from 'idb-keyval'
 import { useGymStore } from '../store/gym'
 import { isGymDate, isGymStatus, parseGymExercises, type GymCheckIns, type GymWorkouts } from './gym'
 import { supabase } from './supabase'
-import { isGymWeeklyMetrics, type GymWeeklyMetrics } from './gymPlan'
+import { isGymWeeklyMetrics, parseGymWeeklyItems, type GymWeeklyItemId, type GymWeeklyMetrics } from './gymPlan'
 
 const IMPORTED_KEY = 'task-manager-gym-shared-imported'
 let currentController: GymSyncController | null = null
@@ -48,6 +48,27 @@ class GymSyncController {
       if (error) throw error
       useGymStore.getState().clearPendingMetrics(week, metrics)
     }
+    for (const [week, items] of Object.entries(useGymStore.getState().pendingChecklist)) {
+      const { error } = await supabase.from('gym_weekly_checklists').upsert({
+        week_start: week,
+        completed_items: items,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'week_start' })
+      if (error) throw error
+      useGymStore.getState().clearPendingChecklist(week, items)
+    }
+  }
+
+  private async readRemoteChecklist(): Promise<Record<string, GymWeeklyItemId[]>> {
+    if (!supabase) throw new Error('Supabase is not configured.')
+    const { data, error } = await supabase.from('gym_weekly_checklists').select('week_start, completed_items')
+    if (error) throw error
+    const checklist: Record<string, GymWeeklyItemId[]> = {}
+    for (const row of data ?? []) {
+      if (typeof row.week_start !== 'string') throw new Error('Invalid weekly gym checklist in cloud.')
+      checklist[row.week_start] = parseGymWeeklyItems(row.completed_items)
+    }
+    return checklist
   }
 
   private async readRemoteMetrics(): Promise<Record<string, GymWeeklyMetrics>> {
@@ -75,16 +96,18 @@ class GymSyncController {
       await this.flushPending()
       const remote = await this.readRemote()
       const remoteMetrics = await this.readRemoteMetrics()
+      const remoteChecklist = await this.readRemoteChecklist()
       if (this.stopped) return
       useGymStore.getState().applyRemote(remote)
       useGymStore.getState().applyRemoteMetrics(remoteMetrics)
+      useGymStore.getState().applyRemoteChecklist(remoteChecklist)
       if (!imported) await idbSet(IMPORTED_KEY, true)
       useGymStore.getState().setSyncMode('synced')
     } catch {
       if (!this.stopped) useGymStore.getState().setSyncMode('offline')
     } finally {
       this.busy = false
-      if (!this.stopped && (Object.keys(useGymStore.getState().pending).length > 0 || Object.keys(useGymStore.getState().pendingMetrics).length > 0)) this.queueRefresh(5000)
+      if (!this.stopped && (Object.keys(useGymStore.getState().pending).length > 0 || Object.keys(useGymStore.getState().pendingMetrics).length > 0 || Object.keys(useGymStore.getState().pendingChecklist).length > 0)) this.queueRefresh(5000)
     }
   }
 
@@ -100,11 +123,13 @@ class GymSyncController {
   start() {
     let previousPending = useGymStore.getState().pending
     let previousPendingMetrics = useGymStore.getState().pendingMetrics
+    let previousPendingChecklist = useGymStore.getState().pendingChecklist
     this.unsubscribe = useGymStore.subscribe((state) => {
-      if (state.pending !== previousPending || state.pendingMetrics !== previousPendingMetrics) {
+      if (state.pending !== previousPending || state.pendingMetrics !== previousPendingMetrics || state.pendingChecklist !== previousPendingChecklist) {
         previousPending = state.pending
         previousPendingMetrics = state.pendingMetrics
-        if (Object.keys(state.pending).length > 0 || Object.keys(state.pendingMetrics).length > 0) this.queueRefresh()
+        previousPendingChecklist = state.pendingChecklist
+        if (Object.keys(state.pending).length > 0 || Object.keys(state.pendingMetrics).length > 0 || Object.keys(state.pendingChecklist).length > 0) this.queueRefresh()
       }
     })
     this.interval = setInterval(() => { void this.refresh() }, 60_000)

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
 import { canCheckIn, isGymExercise, isGymStatus, parseGymExercises, type GymCheckIns, type GymDayRecord, type GymExercise, type GymStatus, type GymWorkouts } from '../lib/gym'
-import { isGymWeeklyMetrics, type GymWeeklyMetrics } from '../lib/gymPlan'
+import { isGymWeeklyItemId, isGymWeeklyMetrics, parseGymWeeklyItems, type GymWeeklyItemId, type GymWeeklyMetrics } from '../lib/gymPlan'
 
 interface GymState {
   checkIns: GymCheckIns
@@ -10,6 +10,8 @@ interface GymState {
   pending: Record<string, GymDayRecord | null>
   weeklyMetrics: Record<string, GymWeeklyMetrics>
   pendingMetrics: Record<string, GymWeeklyMetrics>
+  weeklyChecklist: Record<string, GymWeeklyItemId[]>
+  pendingChecklist: Record<string, GymWeeklyItemId[]>
   hasHydrated: boolean
   syncMode: 'connecting' | 'synced' | 'offline'
   setCheckIn: (date: string, status: GymStatus) => void
@@ -19,6 +21,9 @@ interface GymState {
   saveWeeklyMetrics: (week: string, metrics: GymWeeklyMetrics) => void
   applyRemoteMetrics: (remote: Record<string, GymWeeklyMetrics>) => void
   clearPendingMetrics: (week: string, value: GymWeeklyMetrics) => void
+  toggleWeeklyItem: (week: string, item: GymWeeklyItemId) => void
+  applyRemoteChecklist: (remote: Record<string, GymWeeklyItemId[]>) => void
+  clearPendingChecklist: (week: string, value: GymWeeklyItemId[]) => void
   queueLocalOnly: (remote: { checkIns: GymCheckIns; workouts: GymWorkouts }) => void
   applyRemote: (remote: { checkIns: GymCheckIns; workouts: GymWorkouts }) => void
   clearPending: (date: string, value: GymDayRecord | null) => void
@@ -40,8 +45,30 @@ export const useGymStore = create<GymState>()(
       pending: {},
       weeklyMetrics: {},
       pendingMetrics: {},
+      weeklyChecklist: {},
+      pendingChecklist: {},
       hasHydrated: false,
       syncMode: 'connecting',
+      toggleWeeklyItem: (week, item) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(week) || !isGymWeeklyItemId(item)) return
+        set(state => {
+          const previous = state.weeklyChecklist[week] ?? []
+          const next = previous.includes(item) ? previous.filter(id => id !== item) : [...previous, item]
+          return {
+            weeklyChecklist: { ...state.weeklyChecklist, [week]: next },
+            pendingChecklist: { ...state.pendingChecklist, [week]: next },
+          }
+        })
+      },
+      applyRemoteChecklist: remote => set(state => ({
+        weeklyChecklist: { ...remote, ...state.pendingChecklist },
+      })),
+      clearPendingChecklist: (week, value) => set(state => {
+        if (state.pendingChecklist[week] !== value) return state
+        const pendingChecklist = { ...state.pendingChecklist }
+        delete pendingChecklist[week]
+        return { pendingChecklist }
+      }),
       saveWeeklyMetrics: (week, metrics) => {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(week) || !isGymWeeklyMetrics(metrics)) return
         set(state => ({
@@ -148,7 +175,7 @@ export const useGymStore = create<GymState>()(
     {
       name: 'task-manager-gym',
       storage: createJSONStorage(() => idbStorage),
-      partialize: (state) => ({ checkIns: state.checkIns, workouts: state.workouts, pending: state.pending, weeklyMetrics: state.weeklyMetrics, pendingMetrics: state.pendingMetrics }),
+      partialize: (state) => ({ checkIns: state.checkIns, workouts: state.workouts, pending: state.pending, weeklyMetrics: state.weeklyMetrics, pendingMetrics: state.pendingMetrics, weeklyChecklist: state.weeklyChecklist, pendingChecklist: state.pendingChecklist }),
       merge: (persisted, current) => {
         const saved = (persisted ?? {}) as Partial<GymState> & { pending?: Record<string, GymStatus | GymDayRecord | null> }
         const checkIns = saved.checkIns ?? {}
@@ -161,7 +188,9 @@ export const useGymStore = create<GymState>()(
         }
         const weeklyMetrics = Object.fromEntries(Object.entries(saved.weeklyMetrics ?? {}).filter(([, value]) => isGymWeeklyMetrics(value))) as GymState['weeklyMetrics']
         const pendingMetrics = Object.fromEntries(Object.entries(saved.pendingMetrics ?? {}).filter(([, value]) => isGymWeeklyMetrics(value))) as GymState['pendingMetrics']
-        return { ...current, checkIns, workouts, pending, weeklyMetrics, pendingMetrics }
+        const weeklyChecklist = Object.fromEntries(Object.entries(saved.weeklyChecklist ?? {}).map(([week, value]) => [week, parseGymWeeklyItems(value)]))
+        const pendingChecklist = Object.fromEntries(Object.entries(saved.pendingChecklist ?? {}).map(([week, value]) => [week, parseGymWeeklyItems(value)]))
+        return { ...current, checkIns, workouts, pending, weeklyMetrics, pendingMetrics, weeklyChecklist, pendingChecklist }
       },
       onRehydrateStorage: () => (state) => { state?.setHydrated() },
     }
