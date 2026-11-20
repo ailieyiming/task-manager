@@ -5,6 +5,8 @@ import { canCheckIn, GYM_END, GYM_START, gymYearStats, type GymExercise, type Gy
 import { useGymStore } from '../store/gym'
 import { refreshGymSync } from '../lib/gymSync'
 import { GymExerciseForm } from '../components/gym/GymExerciseForm'
+import { GymWeeklyMetricsForm } from '../components/gym/GymWeeklyMetricsForm'
+import { GYM_PLAN, gymPlanForDate, gymWeekDates, gymWeekStart } from '../lib/gymPlan'
 
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const choices: { status: GymStatus; label: string; active: string }[] = [
@@ -19,7 +21,7 @@ const monthOf = (date: string) => {
 }
 
 export function GymPage() {
-  const { checkIns, workouts, hasHydrated, syncMode, setCheckIn, clearCheckIn, saveExercise, deleteExercise } = useGymStore()
+  const { checkIns, workouts, weeklyMetrics, hasHydrated, syncMode, setCheckIn, clearCheckIn, saveExercise, deleteExercise, saveWeeklyMetrics } = useGymStore()
   const [today, setToday] = useState(localToday)
   const initialDate = today < GYM_START ? GYM_START : today > GYM_END ? GYM_END : today
   const [month, setMonth] = useState(() => monthOf(initialDate))
@@ -39,6 +41,10 @@ export function GymPage() {
   const attendancePercent = stats.elapsed === 0 ? 0 : Math.round((stats.attended / stats.elapsed) * 100)
   const selectedStatus = checkIns[selectedDate]
   const selectedExercises = workouts[selectedDate] ?? []
+  const selectedPlan = gymPlanForDate(selectedDate)
+  const weekDates = gymWeekDates(today)
+  const weekStart = gymWeekStart(today)
+  const weekAttended = weekDates.filter(date => checkIns[date] === 'full' || checkIns[date] === 'relax').length
   const selectedIsOpen = canCheckIn(selectedDate, today)
   const firstDayOffset = (month.getDay() + 6) % 7
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()
@@ -104,6 +110,41 @@ export function GymPage() {
           </div>
         </section>
 
+        <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm" aria-label="Weekly training plan">
+          <h2 className="text-[17px] font-semibold text-stone-900">This week</h2>
+          <p className="text-[12px] text-stone-600 mt-1">Goal: build strength and lower body fat from about 27% toward 22%. Current weight: 52–53 kg. Track the trend, not a daily target.</p>
+          <p className="text-[12px] text-stone-500 mt-1">{weekAttended} days attended · Aim for 4 strength days, 2 Pilates or light days, and 1 recovery day.</p>
+          <p className="text-[12px] text-stone-500 mt-1">Walk toward 10,000 steps a day at a pace that suits you. Build up gradually.</p>
+          <div className="mt-3 divide-y divide-stone-100">
+            {weekDates.map((date, index) => {
+              const plan = GYM_PLAN[index]
+              const status = checkIns[date]
+              const done = workouts[date]?.map(exercise => exercise.name).join(', ')
+              return (
+                <button key={date} type="button" onClick={() => { setMonth(monthOf(date)); setSelectedDate(date) }} className="w-full text-left py-2.5 flex gap-3 items-start">
+                  <span className="w-12 shrink-0 text-[12px] font-medium text-stone-500">{plan.name} {parseLocalDate(date).getDate()}</span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[13px] font-medium text-stone-900">{plan.focus}</span>
+                    <span className="block text-[12px] text-stone-500 break-words">{done ? `Done: ${done}` : status === 'missed' ? "Didn't go" : status ? `${status === 'full' ? 'Full' : 'Relax'} · No exercises logged` : date > today ? 'Planned' : 'Not recorded'}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
+        <GymWeeklyMetricsForm key={`${weekStart}-${weeklyMetrics[weekStart]?.bodyFatPct ?? ''}-${weeklyMetrics[weekStart]?.musclePct ?? ''}`} week={weekStart} metrics={weeklyMetrics[weekStart]} onSave={metrics => saveWeeklyMetrics(weekStart, metrics)} />
+        {Object.keys(weeklyMetrics).length > 0 && (
+          <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm">
+            <h2 className="text-[15px] font-semibold text-stone-900">Body check history</h2>
+            <div className="mt-2 divide-y divide-stone-100">
+              {Object.entries(weeklyMetrics).sort(([a], [b]) => b.localeCompare(a)).slice(0, 8).map(([week, metrics]) => (
+                <p key={week} className="py-2 text-[12px] text-stone-600">{week} · Body fat {metrics.bodyFatPct}% · Muscle {metrics.musclePct}%</p>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <button onClick={() => moveMonth(-1)} disabled={!previousAllowed} aria-label="Previous month" className="w-9 h-9 flex items-center justify-center rounded-full disabled:opacity-25 text-[#1e3a5f]"><ChevronLeft size={20} /></button>
@@ -150,6 +191,10 @@ export function GymPage() {
         <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm">
           <p className="text-[12px] text-stone-400">Daily check-in</p>
           <h2 className="text-[17px] font-semibold text-stone-900 mt-1">{formatDisplay(selectedDate)}</h2>
+          <div className="mt-3 rounded-xl bg-stone-50 p-3">
+            <p className="text-[12px] font-semibold text-[#1e3a5f]">Plan: {selectedPlan.focus}</p>
+            <p className="text-[12px] text-stone-600 mt-1">{selectedPlan.details}</p>
+          </div>
           {selectedIsOpen ? (
             <>
               <p className="text-[13px] text-stone-500 mt-1">{selectedStatus ? 'Your choice is saved. You can change it.' : 'How was your gym day?'}</p>

@@ -2,17 +2,23 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
 import { canCheckIn, isGymExercise, isGymStatus, parseGymExercises, type GymCheckIns, type GymDayRecord, type GymExercise, type GymStatus, type GymWorkouts } from '../lib/gym'
+import { isGymWeeklyMetrics, type GymWeeklyMetrics } from '../lib/gymPlan'
 
 interface GymState {
   checkIns: GymCheckIns
   workouts: GymWorkouts
   pending: Record<string, GymDayRecord | null>
+  weeklyMetrics: Record<string, GymWeeklyMetrics>
+  pendingMetrics: Record<string, GymWeeklyMetrics>
   hasHydrated: boolean
   syncMode: 'connecting' | 'synced' | 'offline'
   setCheckIn: (date: string, status: GymStatus) => void
   clearCheckIn: (date: string) => void
   saveExercise: (date: string, exercise: GymExercise) => void
   deleteExercise: (date: string, id: string) => void
+  saveWeeklyMetrics: (week: string, metrics: GymWeeklyMetrics) => void
+  applyRemoteMetrics: (remote: Record<string, GymWeeklyMetrics>) => void
+  clearPendingMetrics: (week: string, value: GymWeeklyMetrics) => void
   queueLocalOnly: (remote: { checkIns: GymCheckIns; workouts: GymWorkouts }) => void
   applyRemote: (remote: { checkIns: GymCheckIns; workouts: GymWorkouts }) => void
   clearPending: (date: string, value: GymDayRecord | null) => void
@@ -32,8 +38,26 @@ export const useGymStore = create<GymState>()(
       checkIns: {},
       workouts: {},
       pending: {},
+      weeklyMetrics: {},
+      pendingMetrics: {},
       hasHydrated: false,
       syncMode: 'connecting',
+      saveWeeklyMetrics: (week, metrics) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(week) || !isGymWeeklyMetrics(metrics)) return
+        set(state => ({
+          weeklyMetrics: { ...state.weeklyMetrics, [week]: metrics },
+          pendingMetrics: { ...state.pendingMetrics, [week]: metrics },
+        }))
+      },
+      applyRemoteMetrics: (remote) => set(state => ({
+        weeklyMetrics: { ...remote, ...state.pendingMetrics },
+      })),
+      clearPendingMetrics: (week, value) => set(state => {
+        if (state.pendingMetrics[week] !== value) return state
+        const pendingMetrics = { ...state.pendingMetrics }
+        delete pendingMetrics[week]
+        return { pendingMetrics }
+      }),
       setCheckIn: (date, status) => {
         if (!canCheckIn(date) || !isGymStatus(status)) return
         set((state) => {
@@ -124,7 +148,7 @@ export const useGymStore = create<GymState>()(
     {
       name: 'task-manager-gym',
       storage: createJSONStorage(() => idbStorage),
-      partialize: (state) => ({ checkIns: state.checkIns, workouts: state.workouts, pending: state.pending }),
+      partialize: (state) => ({ checkIns: state.checkIns, workouts: state.workouts, pending: state.pending, weeklyMetrics: state.weeklyMetrics, pendingMetrics: state.pendingMetrics }),
       merge: (persisted, current) => {
         const saved = (persisted ?? {}) as Partial<GymState> & { pending?: Record<string, GymStatus | GymDayRecord | null> }
         const checkIns = saved.checkIns ?? {}
@@ -135,7 +159,9 @@ export const useGymStore = create<GymState>()(
           else if (typeof value === 'string' && isGymStatus(value)) pending[date] = { status: value, exercises: workouts[date] ?? [] }
           else if (value && typeof value === 'object' && isGymStatus(value.status)) pending[date] = { status: value.status, exercises: parseGymExercises(value.exercises) }
         }
-        return { ...current, checkIns, workouts, pending }
+        const weeklyMetrics = Object.fromEntries(Object.entries(saved.weeklyMetrics ?? {}).filter(([, value]) => isGymWeeklyMetrics(value))) as GymState['weeklyMetrics']
+        const pendingMetrics = Object.fromEntries(Object.entries(saved.pendingMetrics ?? {}).filter(([, value]) => isGymWeeklyMetrics(value))) as GymState['pendingMetrics']
+        return { ...current, checkIns, workouts, pending, weeklyMetrics, pendingMetrics }
       },
       onRehydrateStorage: () => (state) => { state?.setHydrated() },
     }
