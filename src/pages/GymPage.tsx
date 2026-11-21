@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, Cloud, CloudOff, Dumbbell, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Dumbbell, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { formatDate, formatDisplay, localToday, parseLocalDate } from '../lib/date'
 import { canCheckIn, GYM_END, GYM_START, gymYearStats, isAttendedGymStatus, type GymExercise, type GymStatus } from '../lib/gym'
 import { useGymStore } from '../store/gym'
@@ -24,7 +24,7 @@ const monthOf = (date: string) => {
 }
 
 export function GymPage() {
-  const { checkIns, workouts, weeklyMetrics, weeklyChecklist, hasHydrated, syncMode, setCheckIn, clearCheckIn, saveExercise, deleteExercise, saveWeeklyMetrics, toggleWeeklyItem } = useGymStore()
+  const { checkIns, workouts, weeklyMetrics, weeklyChecklist, hasHydrated, setCheckIn, clearCheckIn, saveExercise, deleteExercise, saveWeeklyMetrics, toggleWeeklyItem } = useGymStore()
   const [today, setToday] = useState(localToday)
   const initialDate = today < GYM_START ? GYM_START : today > GYM_END ? GYM_END : today
   const [month, setMonth] = useState(() => monthOf(initialDate))
@@ -53,12 +53,6 @@ export function GymPage() {
   const monthKey = formatDate(month).slice(0, 7)
   const previousAllowed = monthKey > GYM_START.slice(0, 7)
   const nextAllowed = monthKey < GYM_END.slice(0, 7)
-  const cloudStatus = syncMode === 'synced'
-    ? 'Gym records sync with Supabase. No sign-in needed.'
-    : syncMode === 'connecting'
-      ? 'Connecting Gym to Supabase…'
-      : 'Gym sync is offline. Changes stay on this device until it reconnects.'
-
   const moveMonth = (delta: number) => {
     const next = new Date(month.getFullYear(), month.getMonth() + delta, 1)
     const firstDate = formatDate(next)
@@ -87,13 +81,8 @@ export function GymPage() {
 
       <div className="px-4 py-4 space-y-4">
         <section className="rounded-2xl bg-[#1e3a5f] px-5 py-4 text-white shadow-sm" aria-label="Gym days">
-          <p className="text-[22px] font-semibold">Gym days: {stats.attended}</p>
+          <p className="text-[22px] font-semibold">Gym days: {stats.attended}/{stats.elapsed}</p>
         </section>
-        <div className="w-full flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-3 py-2.5" role="status">
-          {syncMode === 'synced' ? <Cloud size={18} className="flex-shrink-0 text-[#1a4731]" /> : <CloudOff size={18} className="flex-shrink-0 text-stone-400" />}
-          <span className="flex-1 text-[12px] leading-4 text-stone-600">{cloudStatus}</span>
-          {syncMode === 'offline' && <button type="button" onClick={() => void refreshGymSync()} className="text-[12px] font-medium text-[#1e3a5f]">Retry</button>}
-        </div>
         <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm">
           <p className="text-[12px] text-stone-400">Daily check-in</p>
           <h2 className="text-[17px] font-semibold text-stone-900 mt-1">{formatDisplay(selectedDate)}</h2>
@@ -163,20 +152,16 @@ export function GymPage() {
         </details>
         <details className="group bg-white rounded-2xl border border-stone-100 p-4 shadow-sm" aria-label="Weekly training checklist">
           <summary className="flex items-center justify-between gap-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-            <span>
-              <span className="block text-[16px] font-semibold text-stone-900">This week’s plan</span>
-              <span className="block text-[12px] text-stone-500 mt-0.5">{GYM_WEEKLY_ITEMS.filter(item => weekItems.includes(item.id)).length} / {GYM_WEEKLY_ITEMS.length} done · Choose your own days</span>
-            </span>
+            <span className="text-[16px] font-semibold text-stone-900">This week’s plan</span>
+            <span className="ml-auto text-[12px] text-stone-500">{GYM_WEEKLY_ITEMS.filter(item => weekItems.includes(item.id)).length}/{GYM_WEEKLY_ITEMS.length}</span>
             <ChevronDown size={18} className="text-[#1e3a5f] transition-transform group-open:rotate-180" />
           </summary>
-          <p className="text-[12px] text-stone-500 mt-3">Tick a session when done. Take one recovery day. Build walking up gradually.</p>
-          <div className="mt-2 divide-y divide-stone-100">
+          <div className="mt-3 grid grid-cols-2 gap-2">
             {GYM_WEEKLY_ITEMS.map(item => (
-              <label key={item.id} className="flex items-start gap-3 py-2.5 cursor-pointer">
-                <input type="checkbox" checked={weekItems.includes(item.id)} onChange={() => toggleWeeklyItem(weekStart, item.id)} className="mt-0.5 h-5 w-5 accent-[#1a4731]" />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-medium text-stone-900">{item.title}</span>
-                  <span className="block text-[12px] text-stone-500">{item.hint}</span>
+              <label key={item.id} className="flex min-h-12 items-center gap-2 rounded-xl border border-stone-200 px-2.5 py-2 cursor-pointer">
+                <input type="checkbox" checked={weekItems.includes(item.id)} onChange={() => toggleWeeklyItem(weekStart, item.id)} className="h-5 w-5 shrink-0 accent-[#1a4731]" />
+                <span className="min-w-0 text-[12px] font-medium leading-4 text-stone-900">
+                  {item.title}{'walk' in item && <span className="block font-normal text-stone-500">+ walking</span>}
                 </span>
               </label>
             ))}
