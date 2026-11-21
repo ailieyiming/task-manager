@@ -1,6 +1,7 @@
 export interface RepeatRule {
   freq: 'daily' | 'weekly' | 'monthly' | 'custom'
   interval: number
+  unit?: 'days' | 'weeks' | 'months' // custom only; older custom tasks default to days
   stopDate?: string // YYYY-MM-DD
 }
 

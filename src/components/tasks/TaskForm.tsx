@@ -28,6 +28,7 @@ export function TaskForm({ task, onClose, defaultDate }: Props) {
   const [repeating, setRepeating] = useState(!!task?.repeat)
   const [freq, setFreq] = useState<RepeatRule['freq']>(task?.repeat?.freq ?? 'daily')
   const [interval, setInterval] = useState(task?.repeat?.interval ?? 1)
+  const [unit, setUnit] = useState<NonNullable<RepeatRule['unit']>>(task?.repeat?.unit ?? 'days')
   const [stopDate, setStopDate] = useState(task?.repeat?.stopDate ?? '')
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,7 +36,7 @@ export function TaskForm({ task, onClose, defaultDate }: Props) {
     if (!title.trim()) return
 
     const repeat: RepeatRule | undefined = repeating
-      ? { freq, interval, stopDate: stopDate || undefined }
+      ? { freq, interval, ...(freq === 'custom' ? { unit } : {}), stopDate: stopDate || undefined }
       : undefined
 
     if (task) {
@@ -116,7 +117,10 @@ export function TaskForm({ task, onClose, defaultDate }: Props) {
                   <button
                     key={f}
                     type="button"
-                    onClick={() => setFreq(f)}
+                    onClick={() => {
+                      setFreq(f)
+                      if (f !== 'custom') setInterval(1)
+                    }}
                     className={`py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                       freq === f ? 'bg-[#1e3a5f] text-white' : 'bg-white text-stone-600 border border-stone-200'
                     }`}
@@ -129,14 +133,28 @@ export function TaskForm({ task, onClose, defaultDate }: Props) {
 
             {freq === 'custom' && (
               <div>
-                <label className="block text-[12px] font-medium text-stone-500 mb-1">Every N days</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={interval}
-                  onChange={e => setInterval(Math.max(1, Number(e.target.value)))}
-                  className="w-24 border border-stone-200 rounded-xl px-3 py-2 text-[14px] outline-none focus:border-[#1e3a5f]"
-                />
+                <label htmlFor="repeat-interval" className="block text-[12px] font-medium text-stone-500 mb-1">Repeat every</label>
+                <div className="flex gap-2">
+                  <input
+                    id="repeat-interval"
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={interval}
+                    onChange={e => setInterval(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+                    className="w-24 border border-stone-200 rounded-xl px-3 py-2 text-[14px] outline-none focus:border-[#1e3a5f]"
+                  />
+                  <select
+                    aria-label="Repeat unit"
+                    value={unit}
+                    onChange={e => setUnit(e.target.value as NonNullable<RepeatRule['unit']>)}
+                    className="flex-1 border border-stone-200 rounded-xl px-3 py-2 text-[14px] bg-white outline-none focus:border-[#1e3a5f]"
+                  >
+                    <option value="days">Days</option>
+                    <option value="weeks">Weeks</option>
+                    <option value="months">Months</option>
+                  </select>
+                </div>
               </div>
             )}
 

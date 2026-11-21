@@ -6,7 +6,7 @@ import type { Task } from '../../store/types'
 import { useTasksStore } from '../../store/tasks'
 import { useTargetsStore } from '../../store/targets'
 import { formatDisplay, localToday } from '../../lib/date'
-import { isCompleted, isOverdue } from '../../lib/recurrence'
+import { formatRepeatRule, isCompleted, isOverdue } from '../../lib/recurrence'
 
 interface Props {
   task: Task
@@ -75,7 +75,7 @@ export function TaskCard({ task, onEdit }: Props) {
           )}
           {task.repeat && (
             <span className="text-[11px] bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded-full">
-              {task.repeat.freq}
+              {formatRepeatRule(task.repeat)}
             </span>
           )}
           {target && (

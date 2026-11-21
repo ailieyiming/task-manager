@@ -1,4 +1,4 @@
-import { addDays, addWeeks, addMonths, differenceInDays, format } from 'date-fns'
+import { addDays, addWeeks, addMonths, differenceInCalendarMonths, differenceInDays, format } from 'date-fns'
 import type { Task, TaskOverride, RepeatRule } from '../store/types'
 import { parseLocalDate } from './date'
 
@@ -26,20 +26,30 @@ export function isTaskDueToday(task: Task, overrides: TaskOverride[], today: str
 }
 
 function isOccurrence(rule: RepeatRule, base: Date, target: Date, daysDiff: number): boolean {
-  switch (rule.freq) {
+  if (!Number.isInteger(rule.interval) || rule.interval < 1) return false
+  const frequency = rule.freq === 'custom' ? (rule.unit ?? 'days') : rule.freq
+  switch (frequency) {
     case 'daily':
-    case 'custom':
+    case 'days':
       return daysDiff % rule.interval === 0
     case 'weekly':
+    case 'weeks':
       return daysDiff % (rule.interval * 7) === 0
-    case 'monthly': {
+    case 'monthly':
+    case 'months': {
       // Use date-fns addMonths to handle month-end correctly (Jan 31 → Feb 28)
-      const monthsDiff = Math.round(daysDiff / 30)
+      const monthsDiff = differenceInCalendarMonths(target, base)
       if (monthsDiff % rule.interval !== 0) return false
       const occurrence = addMonths(base, monthsDiff)
       return format(occurrence, 'yyyy-MM-dd') === format(target, 'yyyy-MM-dd')
     }
   }
+}
+
+export function formatRepeatRule(rule: RepeatRule): string {
+  if (rule.freq !== 'custom') return rule.freq
+  const unit = rule.unit ?? 'days'
+  return `Every ${rule.interval} ${rule.interval === 1 ? unit.slice(0, -1) : unit}`
 }
 
 export function isCompleted(task: Task, overrides: TaskOverride[], today: string): boolean {

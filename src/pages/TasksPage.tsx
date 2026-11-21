@@ -12,7 +12,7 @@ import {
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { useTasksStore } from '../store/tasks'
 import { localToday, parseLocalDate } from '../lib/date'
-import { isTaskDueToday, isCompleted, isShownInAllTasks, isVisible } from '../lib/recurrence'
+import { formatRepeatRule, isTaskDueToday, isCompleted, isShownInAllTasks, isVisible } from '../lib/recurrence'
 import { useAppStore } from '../store/app'
 import { TaskCard } from '../components/tasks/TaskCard'
 import { TaskForm } from '../components/tasks/TaskForm'
@@ -115,7 +115,7 @@ export function TasksPage({ allTasksPage = false }: { allTasksPage?: boolean }) 
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           {task.repeat && (
             <span className="text-[11px] text-stone-500 capitalize">
-              {task.repeat.freq} · starts {parseLocalDate(task.baseDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+              {formatRepeatRule(task.repeat)} · starts {parseLocalDate(task.baseDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
             </span>
           )}
           {task.targetId && (
