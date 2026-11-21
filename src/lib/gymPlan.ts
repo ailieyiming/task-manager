@@ -23,14 +23,13 @@ export const GYM_CYCLE_ONE = {
   start: '2026-11-23',
   end: '2027-01-17',
   review: '2027-01-18',
-  lowerWarmup: ['5 min brisk walk or bike', 'Bodyweight glute bridge · 1 × 12', 'Bodyweight hip hinge · 1 × 10'],
+  warmup: ['吊环 · 1分45秒', '拉伸肩胛骨 · 15下', '乌龙盘棍 · 15下', '侧拉腰 · 两边各10下'],
   lowerLifts: [
     'Hip thrust · 3 × 10–12',
     'Dumbbell RDL · 3 × 10–12',
     'Hip abduction · 3 × 12–15',
     'Seated leg curl · 2 × 12–15',
   ],
-  upperWarmup: ['5 min elliptical or brisk walk', 'Chin tuck · 1 × 10', 'Light band pull-apart · 1 × 12'],
   upperLifts: [
     'Seated cable row · 3 × 10–12',
     'Lat pulldown · 3 × 10–12',

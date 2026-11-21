@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { canCheckIn, GYM_TOTAL_DAYS, gymYearStats } from '../src/lib/gym'
+import { canCheckIn, GYM_TOTAL_DAYS, gymYearStats, isGymStatus } from '../src/lib/gym'
 
 describe('gym year', () => {
   it('covers exactly one year from 5 Oct 2026 through 4 Oct 2027', () => {
@@ -60,6 +60,15 @@ describe('gym days to date', () => {
       '2026-10-20': 'relax',
       '2026-11-02': 'full',
     }, '2026-11-01')
+    expect(stats.attended).toBe(2)
+  })
+
+  it('counts Pilates and preserves older Other records', () => {
+    expect(isGymStatus('pilates')).toBe(true)
+    expect(isGymStatus('other')).toBe(true)
+    const stats = gymYearStats({ '2026-10-05': 'pilates', '2026-10-06': 'other' }, '2026-10-06')
+    expect(stats.pilates).toBe(1)
+    expect(stats.other).toBe(1)
     expect(stats.attended).toBe(2)
   })
 })

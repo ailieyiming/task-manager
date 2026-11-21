@@ -16,6 +16,7 @@ describe('first eight-week gym cycle', () => {
     expect(GYM_CYCLE_ONE.lowerLifts).toHaveLength(4)
     expect(GYM_CYCLE_ONE.upperLifts).toHaveLength(4)
     expect(GYM_CYCLE_ONE.core).toHaveLength(3)
+    expect(GYM_CYCLE_ONE.warmup).toEqual(['吊环 · 1分45秒', '拉伸肩胛骨 · 15下', '乌龙盘棍 · 15下', '侧拉腰 · 两边各10下'])
   })
 
   it('keeps older Pilates checklist records readable', () => {
