@@ -2,10 +2,11 @@ import { addDays, startOfWeek } from 'date-fns'
 import { formatDate, parseLocalDate } from './date'
 
 export const GYM_WEEKLY_ITEMS = [
-  { id: 'lower_a', title: 'Glutes + legs', hint: 'Squat or leg press · hip thrust · core' },
-  { id: 'lower_b', title: 'Glutes + legs', hint: 'Romanian deadlift · step-up · core' },
-  { id: 'upper_a', title: 'Back + arms', hint: 'Row · pulldown · arm work' },
-  { id: 'upper_b', title: 'Back + arms', hint: 'Row · shoulder press · arm work' },
+  { id: 'lower_a', title: 'Glutes + legs A', hint: 'Squat or leg press · hip thrust' },
+  { id: 'lower_b', title: 'Glutes + legs B', hint: 'Romanian deadlift · step-up' },
+  { id: 'lower_c', title: 'Glutes + legs C', hint: 'Glute bridge · lunge or leg press' },
+  { id: 'upper_a', title: 'Back + shoulders A', hint: 'Row · pulldown · shoulder press' },
+  { id: 'upper_b', title: 'Back + shoulders B', hint: 'Row · pulldown · lateral raise' },
   { id: 'pilates_a', title: 'Pilates or mobility', hint: 'Class or light movement' },
   { id: 'pilates_b', title: 'Pilates or mobility', hint: 'Class or light movement' },
   { id: 'walking', title: 'Walking', hint: 'Build toward 10,000 steps on most days' },

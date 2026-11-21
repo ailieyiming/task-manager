@@ -5,7 +5,7 @@ export const GYM_START = '2026-10-05'
 export const GYM_END = '2027-10-04'
 export const GYM_TOTAL_DAYS = differenceInCalendarDays(parseLocalDate(GYM_END), parseLocalDate(GYM_START)) + 1
 
-export type GymStatus = 'full' | 'relax' | 'missed'
+export type GymStatus = 'cardio' | 'muscle' | 'other' | 'full' | 'relax' | 'missed'
 export type GymCheckIns = Record<string, GymStatus>
 export interface GymExercise {
   id: string
@@ -37,7 +37,11 @@ export function parseGymExercises(value: unknown): GymExercise[] {
 }
 
 export function isGymStatus(value: unknown): value is GymStatus {
-  return value === 'full' || value === 'relax' || value === 'missed'
+  return value === 'cardio' || value === 'muscle' || value === 'other' || value === 'full' || value === 'relax' || value === 'missed'
+}
+
+export function isAttendedGymStatus(status: GymStatus | undefined): boolean {
+  return status !== undefined && status !== 'missed'
 }
 
 export function isGymDate(date: string): boolean {
@@ -52,14 +56,15 @@ export function canCheckIn(date: string, today = localToday()): boolean {
 export function gymYearStats(checkIns: GymCheckIns, today = localToday()) {
   const elapsed = Math.max(0, Math.min(GYM_TOTAL_DAYS,
     differenceInCalendarDays(parseLocalDate(today), parseLocalDate(GYM_START)) + 1))
-  const counts = { full: 0, relax: 0, missed: 0 }
+  const counts = { cardio: 0, muscle: 0, other: 0, full: 0, relax: 0, missed: 0 }
   for (const [date, status] of Object.entries(checkIns)) {
     if (canCheckIn(date, today) && isGymStatus(status)) counts[status] += 1
   }
-  const recorded = counts.full + counts.relax + counts.missed
+  const attended = counts.cardio + counts.muscle + counts.other + counts.full + counts.relax
+  const recorded = attended + counts.missed
   return {
     ...counts,
-    attended: counts.full + counts.relax,
+    attended,
     elapsed,
     recorded,
     unrecorded: Math.max(0, elapsed - recorded),

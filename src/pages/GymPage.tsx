@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronDown, ChevronLeft, ChevronRight, Cloud, CloudOff, Dumbbell, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { formatDate, formatDisplay, localToday, parseLocalDate } from '../lib/date'
-import { canCheckIn, GYM_END, GYM_START, gymYearStats, type GymExercise, type GymStatus } from '../lib/gym'
+import { canCheckIn, GYM_END, GYM_START, gymYearStats, isAttendedGymStatus, type GymExercise, type GymStatus } from '../lib/gym'
 import { useGymStore } from '../store/gym'
 import { refreshGymSync } from '../lib/gymSync'
 import { GymExerciseForm } from '../components/gym/GymExerciseForm'
@@ -10,10 +10,13 @@ import { GYM_WEEKLY_ITEMS, gymWeekDates, gymWeekStart } from '../lib/gymPlan'
 
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const choices: { status: GymStatus; label: string; active: string }[] = [
-  { status: 'full', label: 'Full', active: 'bg-[#1a4731] border-[#1a4731] text-white' },
-  { status: 'relax', label: 'Relax', active: 'bg-[#d8bd82] border-[#d8bd82] text-[#3f3520]' },
-  { status: 'missed', label: "Didn't go", active: 'bg-stone-600 border-stone-600 text-white' },
+  { status: 'cardio', label: 'Cardio', active: 'bg-[#b48a42] border-[#b48a42] text-white' },
+  { status: 'muscle', label: 'Muscle', active: 'bg-[#1a4731] border-[#1a4731] text-white' },
+  { status: 'other', label: 'Other', active: 'bg-[#1e3a5f] border-[#1e3a5f] text-white' },
 ]
+
+const statusLabel = (status: GymStatus | undefined) => status === 'missed' ? "Didn't go" : status ? status[0].toUpperCase() + status.slice(1) : 'Not recorded'
+const statusColor = (status: GymStatus | undefined) => status === 'cardio' || status === 'relax' ? 'bg-[#b48a42]' : status === 'muscle' || status === 'full' ? 'bg-[#1a4731]' : status === 'other' ? 'bg-[#1e3a5f]' : 'bg-stone-400'
 
 const monthOf = (date: string) => {
   const parsed = parseLocalDate(date)
@@ -83,6 +86,9 @@ export function GymPage() {
       </div>
 
       <div className="px-4 py-4 space-y-4">
+        <section className="rounded-2xl bg-[#1e3a5f] px-5 py-4 text-white shadow-sm" aria-label="Gym days">
+          <p className="text-[22px] font-semibold">Gym days: {stats.attended}</p>
+        </section>
         <div className="w-full flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-3 py-2.5" role="status">
           {syncMode === 'synced' ? <Cloud size={18} className="flex-shrink-0 text-[#1a4731]" /> : <CloudOff size={18} className="flex-shrink-0 text-stone-400" />}
           <span className="flex-1 text-[12px] leading-4 text-stone-600">{cloudStatus}</span>
@@ -96,25 +102,22 @@ export function GymPage() {
               const status = checkIns[date]
               const enabled = canCheckIn(date, today)
               return (
-                <button key={date} type="button" disabled={!enabled} onClick={() => { setSelectedDate(date); setMonth(monthOf(date)) }} aria-label={`${formatDisplay(date)}: ${status === 'missed' ? "Didn't go" : status ?? 'Not recorded'}`} aria-pressed={selectedDate === date}
+                <button key={date} type="button" disabled={!enabled} onClick={() => { setSelectedDate(date); setMonth(monthOf(date)) }} aria-label={`${formatDisplay(date)}: ${statusLabel(status)}`} aria-pressed={selectedDate === date}
                   className={`min-h-12 rounded-lg border text-center ${selectedDate === date ? 'border-[#1e3a5f] bg-[#edf2f5]' : 'border-stone-100 bg-stone-50'} ${enabled ? '' : 'opacity-30'}`}>
                   <span className="block text-[10px] text-stone-500">{weekdays[index]}</span>
                   <span className="block text-[13px] font-semibold text-stone-900">{parseLocalDate(date).getDate()}</span>
-                  {status && <span className={`block mx-auto h-1.5 w-1.5 rounded-full ${status === 'full' ? 'bg-[#1a4731]' : status === 'relax' ? 'bg-[#b69049]' : 'bg-stone-400'}`} />}
+                  {status && <span className={`block mx-auto h-1.5 w-1.5 rounded-full ${statusColor(status)}`} />}
                 </button>
               )
             })}
           </div>
-          <p className="text-[12px] text-stone-600 mt-2">This week: 4 strength sessions · 2 Pilates or light sessions · walking. Choose the days that suit you.</p>
           {selectedIsOpen ? (
             <>
               <p className="text-[13px] text-stone-500 mt-2">{selectedStatus ? 'Your choice is saved. You can change it.' : 'How was your gym day?'}</p>
+              {selectedStatus && !choices.some(choice => choice.status === selectedStatus) && <p className="mt-1 text-[12px] text-stone-500">Earlier entry: {statusLabel(selectedStatus)}. Choose a new label only if you want to change it.</p>}
               <div className="grid grid-cols-3 gap-2 mt-3">
                 {choices.map(({ status, label, active }) => (
-                  <button key={status} type="button" onClick={() => {
-                    if (status === 'missed' && selectedExercises.length > 0 && !confirm('Mark as Didn\'t go and remove this day\'s exercise records?')) return
-                    setCheckIn(selectedDate, status)
-                  }} aria-pressed={selectedStatus === status}
+                  <button key={status} type="button" onClick={() => setCheckIn(selectedDate, status)} aria-pressed={selectedStatus === status}
                     className={`min-h-12 rounded-xl border text-[13px] font-medium ${selectedStatus === status ? active : 'border-stone-200 bg-white text-stone-600'}`}>{label}</button>
                 ))}
               </div>
@@ -127,83 +130,17 @@ export function GymPage() {
             <p className="text-[13px] text-stone-500 mt-2">{selectedDate > today ? 'This day is not here yet.' : 'Check-ins start on 5 October 2026.'}</p>
           )}
         </section>
-        <details className="group bg-white rounded-2xl border border-stone-100 p-4 shadow-sm" aria-label="Weekly training checklist">
-          <summary className="flex items-center justify-between gap-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-            <span>
-              <span className="block text-[16px] font-semibold text-stone-900">This week’s plan</span>
-              <span className="block text-[12px] text-stone-500 mt-0.5">{weekItems.length} / {GYM_WEEKLY_ITEMS.length} done · Choose your own days</span>
-            </span>
-            <ChevronDown size={18} className="text-[#1e3a5f] transition-transform group-open:rotate-180" />
-          </summary>
-          <p className="text-[12px] text-stone-500 mt-3">Tick a session when done. Take one recovery day. Build walking up gradually.</p>
-          <div className="mt-2 divide-y divide-stone-100">
-            {GYM_WEEKLY_ITEMS.map((item, index) => (
-              <label key={item.id} className="flex items-start gap-3 py-2.5 cursor-pointer">
-                <input type="checkbox" checked={weekItems.includes(item.id)} onChange={() => toggleWeeklyItem(weekStart, item.id)} className="mt-0.5 h-5 w-5 accent-[#1a4731]" />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-medium text-stone-900">{item.title}{index < 6 ? ` ${index % 2 === 0 ? 'A' : 'B'}` : ''}</span>
-                  <span className="block text-[12px] text-stone-500">{item.hint}</span>
-                </span>
-              </label>
-            ))}
-          </div>
-        </details>
-
-        <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={() => moveMonth(-1)} disabled={!previousAllowed} aria-label="Previous month" className="w-9 h-9 flex items-center justify-center rounded-full disabled:opacity-25 text-[#1e3a5f]"><ChevronLeft size={20} /></button>
-            <h2 className="text-[16px] font-semibold text-stone-900">{month.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</h2>
-            <button onClick={() => moveMonth(1)} disabled={!nextAllowed} aria-label="Next month" className="w-9 h-9 flex items-center justify-center rounded-full disabled:opacity-25 text-[#1e3a5f]"><ChevronRight size={20} /></button>
-          </div>
-          <div className="grid grid-cols-7 gap-1 text-center mb-2">
-            {weekdays.map(day => <span key={day} className="text-[11px] font-medium text-stone-400">{day}</span>)}
-          </div>
-          <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: firstDayOffset }, (_, index) => <span key={`empty-${index}`} />)}
-            {Array.from({ length: daysInMonth }, (_, index) => {
-              const date = formatDate(new Date(month.getFullYear(), month.getMonth(), index + 1))
-              const status = checkIns[date]
-              const enabled = canCheckIn(date, today)
-              const selected = selectedDate === date
-              const background = status === 'full' ? 'bg-[#1a4731] text-white'
-                : status === 'relax' ? 'bg-[#d8bd82] text-[#3f3520]'
-                  : status === 'missed' ? 'bg-stone-300 text-stone-700'
-                    : 'bg-stone-50 text-stone-700'
-              return (
-                <button
-                  key={date}
-                  type="button"
-                  disabled={!enabled}
-                  onClick={() => setSelectedDate(date)}
-                  aria-label={`${formatDisplay(date)}: ${status === 'missed' ? "Didn't go" : status ?? 'Not recorded'}`}
-                  aria-pressed={selected}
-                  className={`h-11 rounded-xl flex flex-col items-center justify-center border-2 ${selected && enabled ? 'border-[#1e3a5f]' : 'border-transparent'} ${background} ${enabled ? '' : 'opacity-25'}`}
-                >
-                  <span className="text-[14px] font-medium leading-none">{index + 1}</span>
-                  {status && <span className="text-[10px] leading-none mt-1">{status === 'full' ? '●' : status === 'relax' ? '◐' : '–'}</span>}
-                </button>
-              )
-            })}
-          </div>
-          <div className="flex gap-3 mt-4 text-[11px] text-stone-500">
-            <span><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#1a4731] mr-1" />Full</span>
-            <span><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#d8bd82] mr-1" />Relax</span>
-            <span><span className="inline-block w-2.5 h-2.5 rounded-full bg-stone-300 mr-1" />Didn't go</span>
-          </div>
-        </section>
-
-        {selectedIsOpen && (selectedStatus === 'full' || selectedStatus === 'relax') && (
-          <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm" aria-label="Exercise log">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <h2 className="text-[16px] font-semibold text-stone-900">What you did</h2>
-                <p className="text-[12px] text-stone-500">{selectedExercises.length} exercise{selectedExercises.length === 1 ? '' : 's'} · {formatDisplay(selectedDate)}</p>
-              </div>
-              <button type="button" onClick={() => { setEditingExercise(null); setExerciseFormOpen(true) }} className="min-h-10 flex items-center gap-1 rounded-xl bg-[#1e3a5f] px-3 text-[13px] font-medium text-white"><Plus size={16} /> Add exercise</button>
-            </div>
-            {selectedExercises.length === 0 ? (
-              <p className="mt-4 text-[13px] text-stone-500">Add what you did at the gym. You can edit it later.</p>
-            ) : (
+        <details className="group bg-white rounded-2xl border border-stone-100 p-4 shadow-sm" aria-label="Exercise log">
+            <summary className="flex items-center justify-between gap-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+              <span>
+                <span className="block text-[16px] font-semibold text-stone-900">What you did</span>
+                <span className="block text-[12px] text-stone-500">{selectedExercises.length} exercise{selectedExercises.length === 1 ? '' : 's'} · {formatDisplay(selectedDate)}</span>
+              </span>
+              <ChevronDown size={18} className="text-[#1e3a5f] transition-transform group-open:rotate-180" />
+            </summary>
+            {selectedIsOpen && isAttendedGymStatus(selectedStatus) ? <>
+              <button type="button" onClick={() => { setEditingExercise(null); setExerciseFormOpen(true) }} className="mt-3 min-h-10 flex items-center gap-1 rounded-xl bg-[#1e3a5f] px-3 text-[13px] font-medium text-white"><Plus size={16} /> Add exercise</button>
+              {selectedExercises.length === 0 ? <p className="mt-3 text-[13px] text-stone-500">Add what you did. You can edit it later.</p> : (
               <div className="mt-3 divide-y divide-stone-100">
                 {selectedExercises.map(exercise => (
                   <div key={exercise.id} className="flex items-start gap-2 py-3">
@@ -221,9 +158,31 @@ export function GymPage() {
                   </div>
                 ))}
               </div>
-            )}
-          </section>
-        )}
+              )}
+            </> : <p className="mt-3 text-[13px] text-stone-500">Choose Cardio, Muscle, or Other to add exercises.</p>}
+        </details>
+        <details className="group bg-white rounded-2xl border border-stone-100 p-4 shadow-sm" aria-label="Weekly training checklist">
+          <summary className="flex items-center justify-between gap-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+            <span>
+              <span className="block text-[16px] font-semibold text-stone-900">This week’s plan</span>
+              <span className="block text-[12px] text-stone-500 mt-0.5">{GYM_WEEKLY_ITEMS.filter(item => weekItems.includes(item.id)).length} / {GYM_WEEKLY_ITEMS.length} done · Choose your own days</span>
+            </span>
+            <ChevronDown size={18} className="text-[#1e3a5f] transition-transform group-open:rotate-180" />
+          </summary>
+          <p className="text-[12px] text-stone-500 mt-3">Tick a session when done. Take one recovery day. Build walking up gradually.</p>
+          <div className="mt-2 divide-y divide-stone-100">
+            {GYM_WEEKLY_ITEMS.map(item => (
+              <label key={item.id} className="flex items-start gap-3 py-2.5 cursor-pointer">
+                <input type="checkbox" checked={weekItems.includes(item.id)} onChange={() => toggleWeeklyItem(weekStart, item.id)} className="mt-0.5 h-5 w-5 accent-[#1a4731]" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-medium text-stone-900">{item.title}</span>
+                  <span className="block text-[12px] text-stone-500">{item.hint}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </details>
+
         <GymWeeklyMetricsForm key={`${weekStart}-${weeklyMetrics[weekStart]?.bodyFatPct ?? ''}-${weeklyMetrics[weekStart]?.musclePct ?? ''}`} week={weekStart} metrics={weeklyMetrics[weekStart]} onSave={metrics => saveWeeklyMetrics(weekStart, metrics)} />
         {Object.keys(weeklyMetrics).length > 0 && (
           <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm">
@@ -235,26 +194,56 @@ export function GymPage() {
             </div>
           </section>
         )}
-        <section className="rounded-2xl bg-[#1e3a5f] text-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-[13px] text-white/75"><Dumbbell size={16} /> One year of movement</div>
-          <p className="text-[23px] font-semibold mt-2">Gym days: {stats.attended} / {stats.elapsed}</p>
-          <div className="h-2 bg-white/20 rounded-full mt-4 overflow-hidden" role="progressbar" aria-label="Gym days out of elapsed days" aria-valuemin={0} aria-valuemax={stats.elapsed || 1} aria-valuenow={stats.attended}>
-            <div className="h-full bg-[#d8bd82] rounded-full" style={{ width: `${attendancePercent}%` }} />
+        <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={() => moveMonth(-1)} disabled={!previousAllowed} aria-label="Previous month" className="w-9 h-9 flex items-center justify-center rounded-full disabled:opacity-25 text-[#1e3a5f]"><ChevronLeft size={20} /></button>
+            <h2 className="text-[16px] font-semibold text-stone-900">{month.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</h2>
+            <button onClick={() => moveMonth(1)} disabled={!nextAllowed} aria-label="Next month" className="w-9 h-9 flex items-center justify-center rounded-full disabled:opacity-25 text-[#1e3a5f]"><ChevronRight size={20} /></button>
           </div>
-          <p className="text-[12px] text-white/70 mt-2">Full + Relax count as gym days · {attendancePercent}% of days so far</p>
+          <div className="grid grid-cols-7 gap-1 text-center mb-2">
+            {weekdays.map(day => <span key={day} className="text-[11px] font-medium text-stone-400">{day}</span>)}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: firstDayOffset }, (_, index) => <span key={`empty-${index}`} />)}
+            {Array.from({ length: daysInMonth }, (_, index) => {
+              const date = formatDate(new Date(month.getFullYear(), month.getMonth(), index + 1))
+              const status = checkIns[date]
+              const enabled = canCheckIn(date, today)
+              const selected = selectedDate === date
+              const background = status ? `${statusColor(status)} ${status === 'missed' ? 'text-stone-800' : 'text-white'}` : 'bg-stone-50 text-stone-700'
+              return (
+                <button
+                  key={date}
+                  type="button"
+                  disabled={!enabled}
+                  onClick={() => setSelectedDate(date)}
+                  aria-label={`${formatDisplay(date)}: ${statusLabel(status)}`}
+                  aria-pressed={selected}
+                  className={`h-11 rounded-xl flex flex-col items-center justify-center border-2 ${selected && enabled ? 'border-[#1e3a5f]' : 'border-transparent'} ${background} ${enabled ? '' : 'opacity-25'}`}
+                >
+                  <span className="text-[14px] font-medium leading-none">{index + 1}</span>
+                  {status && <span className="text-[10px] leading-none mt-1">{status === 'missed' ? '–' : status[0].toUpperCase()}</span>}
+                </button>
+              )
+            })}
+          </div>
+          <p className="mt-4 text-[11px] text-stone-500">M Muscle · C Cardio · O Other. Older Full, Relax, and Didn’t go entries stay unchanged.</p>
         </section>
-        <section className="grid grid-cols-3 gap-2" aria-label="Gym year totals">
-          <div className="bg-white rounded-2xl border border-stone-100 p-3 text-center">
-            <p className="text-[24px] font-semibold text-[#1a4731]">{stats.full}</p><p className="text-[12px] text-stone-500">Full</p>
+
+        <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm" aria-label="Gym year summary">
+          <div className="flex items-center gap-2"><Dumbbell size={16} className="text-[#1e3a5f]" /><h2 className="text-[16px] font-semibold text-stone-900">Year summary</h2></div>
+          <p className="mt-2 text-[13px] text-stone-600">{stats.attended} gym days out of {stats.elapsed} elapsed days</p>
+          <div className="h-2 bg-stone-100 rounded-full mt-3 overflow-hidden" role="progressbar" aria-label="Gym days out of elapsed days" aria-valuemin={0} aria-valuemax={stats.elapsed || 1} aria-valuenow={stats.attended}>
+            <div className="h-full bg-[#1e3a5f] rounded-full" style={{ width: `${attendancePercent}%` }} />
           </div>
-          <div className="bg-white rounded-2xl border border-stone-100 p-3 text-center">
-            <p className="text-[24px] font-semibold text-[#8b6b2e]">{stats.relax}</p><p className="text-[12px] text-stone-500">Relax</p>
+          <div className="grid grid-cols-3 gap-2 mt-4 text-center">
+            <div><p className="text-[20px] font-semibold text-[#b48a42]">{stats.cardio}</p><p className="text-[12px] text-stone-500">Cardio</p></div>
+            <div><p className="text-[20px] font-semibold text-[#1a4731]">{stats.muscle}</p><p className="text-[12px] text-stone-500">Muscle</p></div>
+            <div><p className="text-[20px] font-semibold text-[#1e3a5f]">{stats.other}</p><p className="text-[12px] text-stone-500">Other</p></div>
           </div>
-          <div className="bg-white rounded-2xl border border-stone-100 p-3 text-center">
-            <p className="text-[24px] font-semibold text-stone-600">{stats.missed}</p><p className="text-[12px] text-stone-500">Didn't go</p>
-          </div>
+          {(stats.full + stats.relax + stats.missed > 0) && <p className="mt-3 border-t border-stone-100 pt-3 text-[12px] text-stone-500">Earlier records: {stats.full} Full · {stats.relax} Relax · {stats.missed} Didn’t go. Full and Relax count as gym days.</p>}
+          <p className="mt-2 text-[12px] text-stone-400">Unrecorded days stay separate from older Didn’t go entries.</p>
         </section>
-        <p className="text-[12px] text-stone-400 px-1 pb-4">Unrecorded days stay separate from “Didn't go” in your year-end totals.</p>
       </div>
       {exerciseFormOpen && (
         <GymExerciseForm

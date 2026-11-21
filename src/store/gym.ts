@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
-import { canCheckIn, isGymExercise, isGymStatus, parseGymExercises, type GymCheckIns, type GymDayRecord, type GymExercise, type GymStatus, type GymWorkouts } from '../lib/gym'
+import { canCheckIn, isAttendedGymStatus, isGymExercise, isGymStatus, parseGymExercises, type GymCheckIns, type GymDayRecord, type GymExercise, type GymStatus, type GymWorkouts } from '../lib/gym'
 import { isGymWeeklyItemId, isGymWeeklyMetrics, parseGymWeeklyItems, type GymWeeklyItemId, type GymWeeklyMetrics } from '../lib/gymPlan'
 
 interface GymState {
@@ -112,7 +112,7 @@ export const useGymStore = create<GymState>()(
         if (!canCheckIn(date) || !isGymExercise(exercise)) return
         set((state) => {
           const status = state.checkIns[date]
-          if (status !== 'full' && status !== 'relax') return state
+          if (!isAttendedGymStatus(status)) return state
           const existing = state.workouts[date] ?? []
           const exercises = existing.some(item => item.id === exercise.id)
             ? existing.map(item => item.id === exercise.id ? exercise : item)
@@ -128,7 +128,7 @@ export const useGymStore = create<GymState>()(
         set((state) => {
           const status = state.checkIns[date]
           const existing = state.workouts[date] ?? []
-          if ((status !== 'full' && status !== 'relax') || !existing.some(item => item.id === id)) return state
+          if (!isAttendedGymStatus(status) || !existing.some(item => item.id === id)) return state
           const exercises = existing.filter(item => item.id !== id)
           return {
             workouts: { ...state.workouts, [date]: exercises },
