@@ -6,7 +6,7 @@ import { useGymStore } from '../store/gym'
 import { refreshGymSync } from '../lib/gymSync'
 import { GymExerciseForm } from '../components/gym/GymExerciseForm'
 import { GymWeeklyMetricsForm } from '../components/gym/GymWeeklyMetricsForm'
-import { GYM_WEEKLY_ITEMS, gymWeekDates, gymWeekStart } from '../lib/gymPlan'
+import { GYM_CYCLE_ONE, GYM_WEEKLY_ITEMS, gymCycleOneWeek, gymWeekDates, gymWeekStart } from '../lib/gymPlan'
 
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const choices: { status: GymStatus; label: string; active: string }[] = [
@@ -46,6 +46,7 @@ export function GymPage() {
   const selectedExercises = workouts[selectedDate] ?? []
   const weekStart = gymWeekStart(today)
   const weekItems = weeklyChecklist[weekStart] ?? []
+  const cycleWeek = gymCycleOneWeek(today)
   const selectedWeekDates = gymWeekDates(selectedDate)
   const selectedIsOpen = canCheckIn(selectedDate, today)
   const firstDayOffset = (month.getDay() + 6) % 7
@@ -152,20 +153,45 @@ export function GymPage() {
         </details>
         <details className="group bg-white rounded-2xl border border-stone-100 p-4 shadow-sm" aria-label="Weekly training checklist">
           <summary className="flex items-center justify-between gap-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-            <span className="text-[16px] font-semibold text-stone-900">This week’s plan</span>
-            <span className="ml-auto text-[12px] text-stone-500">{GYM_WEEKLY_ITEMS.filter(item => weekItems.includes(item.id)).length}/{GYM_WEEKLY_ITEMS.length}</span>
+            <span>
+              <span className="block text-[16px] font-semibold text-stone-900">8-week plan · Cycle 1</span>
+              <span className="block text-[12px] text-stone-500">{cycleWeek ? `Week ${cycleWeek}/8` : today < GYM_CYCLE_ONE.start ? 'Starts 23 Nov 2026' : 'Finished 17 Jan 2027'} · 3 glute/leg + 2 back/shoulder</span>
+            </span>
+            {cycleWeek && <span className="ml-auto text-[12px] text-stone-500">{GYM_WEEKLY_ITEMS.filter(item => weekItems.includes(item.id)).length}/{GYM_WEEKLY_ITEMS.length}</span>}
             <ChevronDown size={18} className="text-[#1e3a5f] transition-transform group-open:rotate-180" />
           </summary>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {GYM_WEEKLY_ITEMS.map(item => (
-              <label key={item.id} className="flex min-h-12 items-center gap-2 rounded-xl border border-stone-200 px-2.5 py-2 cursor-pointer">
-                <input type="checkbox" checked={weekItems.includes(item.id)} onChange={() => toggleWeeklyItem(weekStart, item.id)} className="h-5 w-5 shrink-0 accent-[#1a4731]" />
-                <span className="min-w-0 text-[12px] font-medium leading-4 text-stone-900">
-                  {item.title}{'walk' in item && <span className="block font-normal text-stone-500">+ walking</span>}
-                </span>
-              </label>
-            ))}
+          <p className="mt-3 text-[12px] text-stone-500">23 Nov 2026 – 17 Jan 2027 · Review 18 Jan 2027</p>
+          {cycleWeek && <>
+            <p className="mt-3 text-[12px] font-medium text-stone-600">This week · choose your own days</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {GYM_WEEKLY_ITEMS.map(item => (
+                <label key={item.id} className="flex min-h-12 items-center gap-2 rounded-xl border border-stone-200 px-2.5 py-2 cursor-pointer">
+                  <input type="checkbox" checked={weekItems.includes(item.id)} onChange={() => toggleWeeklyItem(weekStart, item.id)} className="h-5 w-5 shrink-0 accent-[#1a4731]" />
+                  <span className="min-w-0 text-[12px] font-medium leading-4 text-stone-900">{item.title}</span>
+                </label>
+              ))}
+            </div>
+          </>}
+          <div className="mt-3 space-y-2">
+            <details className="rounded-xl border border-stone-200 px-3 py-2">
+              <summary className="cursor-pointer text-[13px] font-medium text-stone-900">Glutes + legs · warm-up, lifts, core</summary>
+              <div className="mt-2 space-y-2 text-[12px] text-stone-600">
+                <div><p className="font-semibold text-stone-700">Warm-up · 8 min</p>{GYM_CYCLE_ONE.lowerWarmup.map(item => <p key={item}>{item}</p>)}</div>
+                <div><p className="font-semibold text-stone-700">Lifts · 35–40 min</p>{GYM_CYCLE_ONE.lowerLifts.map(item => <p key={item}>{item}</p>)}</div>
+                <p>A: target sets above. B: first three lifts 2 sets each. C: all lifts 1–2 lighter sets.</p>
+                <div><p className="font-semibold text-stone-700">Core · 10–12 min</p>{GYM_CYCLE_ONE.core.map(item => <p key={item}>{item}</p>)}</div>
+              </div>
+            </details>
+            <details className="rounded-xl border border-stone-200 px-3 py-2">
+              <summary className="cursor-pointer text-[13px] font-medium text-stone-900">Back + shoulders · warm-up, lifts, core</summary>
+              <div className="mt-2 space-y-2 text-[12px] text-stone-600">
+                <div><p className="font-semibold text-stone-700">Warm-up · 8 min</p>{GYM_CYCLE_ONE.upperWarmup.map(item => <p key={item}>{item}</p>)}</div>
+                <div><p className="font-semibold text-stone-700">Lifts · 35–40 min</p>{GYM_CYCLE_ONE.upperLifts.map(item => <p key={item}>{item}</p>)}</div>
+                <div><p className="font-semibold text-stone-700">Core · 1 set each</p>{GYM_CYCLE_ONE.upperCore.map(item => <p key={item}>{item}</p>)}</div>
+              </div>
+            </details>
           </div>
+          <p className="mt-3 text-[12px] text-stone-500">Weeks 1–2: start with 1–2 sets per lift. Build toward the listed sets. Keep about 3 reps in reserve. Rest 2–3 min after compound lifts; 60–90 sec after isolation lifts. Increase weight only when all sets reach the top of the rep range with stable form.</p>
         </details>
 
         <GymWeeklyMetricsForm key={`${weekStart}-${weeklyMetrics[weekStart]?.bodyFatPct ?? ''}-${weeklyMetrics[weekStart]?.musclePct ?? ''}`} week={weekStart} metrics={weeklyMetrics[weekStart]} onSave={metrics => saveWeeklyMetrics(weekStart, metrics)} />
