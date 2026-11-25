@@ -6,7 +6,7 @@ import { useGymStore } from '../store/gym'
 import { refreshGymSync } from '../lib/gymSync'
 import { GymExerciseForm } from '../components/gym/GymExerciseForm'
 import { GymWeeklyMetricsForm } from '../components/gym/GymWeeklyMetricsForm'
-import { GYM_CYCLE_ONE, GYM_WEEKLY_ITEMS, gymWeekDates, gymWeekStart } from '../lib/gymPlan'
+import { GYM_CYCLE_ONE, GYM_WEEKLY_GOAL, GYM_WEEKLY_ITEMS, gymWeekDates, gymWeekStart } from '../lib/gymPlan'
 
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const choices: { status: GymStatus; label: string; active: string }[] = [
@@ -158,7 +158,7 @@ export function GymPage() {
         <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm" aria-label="Weekly training checklist and 8-week plan, cycle 1">
           <div className="flex items-center justify-between">
             <h2 className="text-[15px] font-semibold text-stone-900">This week’s plan</h2>
-            <span className="text-[12px] text-stone-500">{completedWeekItems}/{GYM_WEEKLY_ITEMS.length}</span>
+            <span className={`text-[12px] ${completedWeekItems >= GYM_WEEKLY_GOAL ? 'font-semibold text-[#1a4731]' : 'text-stone-500'}`}>{completedWeekItems}/{GYM_WEEKLY_ITEMS.length} · Goal: {GYM_WEEKLY_GOAL}</span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {GYM_WEEKLY_ITEMS.map(item => (

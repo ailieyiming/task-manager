@@ -7,12 +7,15 @@ export const GYM_WEEKLY_ITEMS = [
   { id: 'lower_c', title: 'Glutes + legs C' },
   { id: 'upper_a', title: 'Back + shoulders A' },
   { id: 'upper_b', title: 'Back + shoulders B' },
+  { id: 'pilates_a', title: 'Pilates' },
 ] as const
 
-export type GymWeeklyItemId = typeof GYM_WEEKLY_ITEMS[number]['id'] | 'pilates_a' | 'pilates_b' | 'walking'
+export const GYM_WEEKLY_GOAL = 4
+
+export type GymWeeklyItemId = typeof GYM_WEEKLY_ITEMS[number]['id'] | 'pilates_b' | 'walking'
 
 export function isGymWeeklyItemId(value: unknown): value is GymWeeklyItemId {
-  return value === 'walking' || value === 'pilates_a' || value === 'pilates_b' || GYM_WEEKLY_ITEMS.some(item => item.id === value)
+  return value === 'walking' || value === 'pilates_b' || GYM_WEEKLY_ITEMS.some(item => item.id === value)
 }
 
 export function parseGymWeeklyItems(value: unknown): GymWeeklyItemId[] {

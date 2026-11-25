@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { GYM_CYCLE_ONE, GYM_WEEKLY_ITEMS, gymCycleOneWeek, parseGymWeeklyItems } from '../src/lib/gymPlan'
+import { GYM_CYCLE_ONE, GYM_WEEKLY_GOAL, GYM_WEEKLY_ITEMS, gymCycleOneWeek, parseGymWeeklyItems } from '../src/lib/gymPlan'
 
 describe('first eight-week gym cycle', () => {
   it('covers eight complete weeks', () => {
@@ -11,8 +11,9 @@ describe('first eight-week gym cycle', () => {
     expect(gymCycleOneWeek('2027-01-18')).toBeNull()
   })
 
-  it('has three lower-body and two upper-body checklist entries', () => {
-    expect(GYM_WEEKLY_ITEMS.map(item => item.id)).toEqual(['lower_a', 'lower_b', 'lower_c', 'upper_a', 'upper_b'])
+  it('has three lower-body, two upper-body, and one Pilates entry with a four-item goal', () => {
+    expect(GYM_WEEKLY_ITEMS.map(item => item.id)).toEqual(['lower_a', 'lower_b', 'lower_c', 'upper_a', 'upper_b', 'pilates_a'])
+    expect(GYM_WEEKLY_GOAL).toBe(4)
     expect(GYM_CYCLE_ONE.lowerLifts).toHaveLength(4)
     expect(GYM_CYCLE_ONE.upperLifts).toHaveLength(4)
     expect(GYM_CYCLE_ONE.core).toHaveLength(3)
