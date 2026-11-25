@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, Dumbbell, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Dumbbell, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { formatDate, formatDisplay, localToday, parseLocalDate } from '../lib/date'
 import { canCheckIn, GYM_END, GYM_START, gymYearStats, isAttendedGymStatus, type GymExercise, type GymStatus } from '../lib/gym'
 import { useGymStore } from '../store/gym'
@@ -48,6 +48,15 @@ export function GymPage() {
   const weekStart = gymWeekStart(today)
   const weekItems = weeklyChecklist[weekStart] ?? []
   const completedWeekItems = GYM_WEEKLY_ITEMS.filter(item => weekItems.includes(item.id)).length
+  const weeklyMark = (item: typeof GYM_WEEKLY_ITEMS[number], label: string) => {
+    const checked = weekItems.includes(item.id)
+    return (
+      <button key={item.id} type="button" aria-label={item.title} aria-pressed={checked} onClick={() => toggleWeeklyItem(weekStart, item.id)}
+        className={`min-h-11 min-w-11 inline-flex items-center justify-center gap-1 rounded-lg border px-2 text-[12px] font-medium ${checked ? 'border-[#1a4731] bg-[#e5f1e9] text-[#1a4731]' : 'border-stone-200 bg-white text-stone-600'}`}>
+        {checked && <Check size={14} aria-hidden="true" />}{label}
+      </button>
+    )
+  }
   const selectedWeekDates = gymWeekDates(selectedDate)
   const selectedIsOpen = canCheckIn(selectedDate, today)
   const firstDayOffset = (month.getDay() + 6) % 7
@@ -160,13 +169,18 @@ export function GymPage() {
             <h2 className="text-[15px] font-semibold text-stone-900">This week’s plan</h2>
             <span className={`text-[12px] ${completedWeekItems >= GYM_WEEKLY_GOAL ? 'font-semibold text-[#1a4731]' : 'text-stone-500'}`}>{completedWeekItems}/{GYM_WEEKLY_ITEMS.length} · Goal: {GYM_WEEKLY_GOAL}</span>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {GYM_WEEKLY_ITEMS.map(item => (
-              <label key={item.id} className="flex min-h-11 items-center gap-2 rounded-xl border border-stone-200 px-2.5 py-2 cursor-pointer">
-                <input type="checkbox" checked={weekItems.includes(item.id)} onChange={() => toggleWeeklyItem(weekStart, item.id)} className="h-5 w-5 shrink-0 accent-[#1a4731]" />
-                <span className="min-w-0 text-[12px] font-medium leading-4 text-stone-900">{item.title}</span>
-              </label>
-            ))}
+          <div className="mt-2 divide-y divide-stone-100">
+            <div className="flex min-h-14 items-center justify-between gap-2 py-1.5">
+              <span className="text-[12px] font-medium text-stone-700">Glutes + legs</span>
+              <div className="flex gap-1.5">{GYM_WEEKLY_ITEMS.slice(0, 3).map((item, index) => weeklyMark(item, ['A', 'B', 'C'][index]))}</div>
+            </div>
+            <div className="flex min-h-14 items-center justify-between gap-2 py-1.5">
+              <span className="text-[12px] font-medium text-stone-700">Back + shoulders</span>
+              <div className="flex gap-1.5">{GYM_WEEKLY_ITEMS.slice(3, 5).map((item, index) => weeklyMark(item, ['A', 'B'][index]))}</div>
+            </div>
+            <div className="flex min-h-14 items-center gap-2 py-1.5">
+              {GYM_WEEKLY_ITEMS.slice(5).map(item => weeklyMark(item, item.title))}
+            </div>
           </div>
           <div className="mt-3 space-y-2">
             <details className="rounded-xl border border-stone-200 px-3 py-2">

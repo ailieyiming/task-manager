@@ -8,6 +8,7 @@ export const GYM_WEEKLY_ITEMS = [
   { id: 'upper_a', title: 'Back + shoulders A' },
   { id: 'upper_b', title: 'Back + shoulders B' },
   { id: 'pilates_a', title: 'Pilates' },
+  { id: 'cardio', title: 'Cardio' },
 ] as const
 
 export const GYM_WEEKLY_GOAL = 4

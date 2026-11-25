@@ -11,8 +11,8 @@ describe('first eight-week gym cycle', () => {
     expect(gymCycleOneWeek('2027-01-18')).toBeNull()
   })
 
-  it('has three lower-body, two upper-body, and one Pilates entry with a four-item goal', () => {
-    expect(GYM_WEEKLY_ITEMS.map(item => item.id)).toEqual(['lower_a', 'lower_b', 'lower_c', 'upper_a', 'upper_b', 'pilates_a'])
+  it('has three lower-body, two upper-body, Pilates, and Cardio entries with a four-item goal', () => {
+    expect(GYM_WEEKLY_ITEMS.map(item => item.id)).toEqual(['lower_a', 'lower_b', 'lower_c', 'upper_a', 'upper_b', 'pilates_a', 'cardio'])
     expect(GYM_WEEKLY_GOAL).toBe(4)
     expect(GYM_CYCLE_ONE.lowerLifts).toHaveLength(4)
     expect(GYM_CYCLE_ONE.upperLifts).toHaveLength(4)
@@ -22,5 +22,6 @@ describe('first eight-week gym cycle', () => {
 
   it('keeps older Pilates checklist records readable', () => {
     expect(parseGymWeeklyItems(['pilates_a', 'pilates_b', 'walking', 'lower_a'])).toEqual(['pilates_a', 'pilates_b', 'walking', 'lower_a'])
+    expect(parseGymWeeklyItems(['cardio', 'lower_a'])).toEqual(['cardio', 'lower_a'])
   })
 })
