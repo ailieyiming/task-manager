@@ -6,13 +6,14 @@ import { useGymStore } from '../store/gym'
 import { refreshGymSync } from '../lib/gymSync'
 import { GymExerciseForm } from '../components/gym/GymExerciseForm'
 import { GymWeeklyMetricsForm } from '../components/gym/GymWeeklyMetricsForm'
-import { GYM_CYCLE_ONE, gymWeekDates, gymWeekStart } from '../lib/gymPlan'
+import { GYM_CYCLE_ONE, GYM_WEEKLY_ITEMS, gymWeekDates, gymWeekStart } from '../lib/gymPlan'
 
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const choices: { status: GymStatus; label: string; active: string }[] = [
   { status: 'cardio', label: 'Cardio', active: 'bg-[#b48a42] border-[#b48a42] text-white' },
   { status: 'muscle', label: 'Muscle', active: 'bg-[#1a4731] border-[#1a4731] text-white' },
   { status: 'pilates', label: 'Pilates', active: 'bg-[#1e3a5f] border-[#1e3a5f] text-white' },
+  { status: 'missed', label: "Didn't go", active: 'bg-stone-500 border-stone-500 text-white' },
 ]
 
 const statusLabel = (status: GymStatus | undefined) => status === 'missed' ? "Didn't go" : status ? status[0].toUpperCase() + status.slice(1) : 'Not recorded'
@@ -24,7 +25,7 @@ const monthOf = (date: string) => {
 }
 
 export function GymPage() {
-  const { checkIns, workouts, weeklyMetrics, hasHydrated, setCheckIn, clearCheckIn, saveExercise, deleteExercise, saveWeeklyMetrics } = useGymStore()
+  const { checkIns, workouts, weeklyMetrics, weeklyChecklist, hasHydrated, setCheckIn, clearCheckIn, saveExercise, deleteExercise, saveWeeklyMetrics, toggleWeeklyItem } = useGymStore()
   const [today, setToday] = useState(localToday)
   const initialDate = today < GYM_START ? GYM_START : today > GYM_END ? GYM_END : today
   const [month, setMonth] = useState(() => monthOf(initialDate))
@@ -45,6 +46,8 @@ export function GymPage() {
   const selectedStatus = checkIns[selectedDate]
   const selectedExercises = workouts[selectedDate] ?? []
   const weekStart = gymWeekStart(today)
+  const weekItems = weeklyChecklist[weekStart] ?? []
+  const completedWeekItems = GYM_WEEKLY_ITEMS.filter(item => weekItems.includes(item.id)).length
   const selectedWeekDates = gymWeekDates(selectedDate)
   const selectedIsOpen = canCheckIn(selectedDate, today)
   const firstDayOffset = (month.getDay() + 6) % 7
@@ -103,9 +106,12 @@ export function GymPage() {
             <>
               <p className="text-[13px] text-stone-500 mt-2">{selectedStatus ? 'Your choice is saved. You can change it.' : 'How was your gym day?'}</p>
               {selectedStatus && !choices.some(choice => choice.status === selectedStatus) && <p className="mt-1 text-[12px] text-stone-500">Earlier entry: {statusLabel(selectedStatus)}. Choose a new label only if you want to change it.</p>}
-              <div className="grid grid-cols-3 gap-2 mt-3">
+              <div className="grid grid-cols-2 gap-2 mt-3">
                 {choices.map(({ status, label, active }) => (
-                  <button key={status} type="button" onClick={() => setCheckIn(selectedDate, status)} aria-pressed={selectedStatus === status}
+                  <button key={status} type="button" onClick={() => {
+                    if (status === 'missed' && selectedExercises.length > 0 && !confirm('Mark as Didn’t go and remove all exercise records for this day?')) return
+                    setCheckIn(selectedDate, status)
+                  }} aria-pressed={selectedStatus === status}
                     className={`min-h-12 rounded-xl border text-[13px] font-medium ${selectedStatus === status ? active : 'border-stone-200 bg-white text-stone-600'}`}>{label}</button>
                 ))}
               </div>
@@ -149,8 +155,20 @@ export function GymPage() {
               )}
             </> : <p className="mt-3 text-[13px] text-stone-500">Choose Cardio, Muscle, or Pilates to add exercises.</p>}
         </details>
-        <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm" aria-label="8-week plan, cycle 1">
-          <div className="space-y-2">
+        <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm" aria-label="Weekly training checklist and 8-week plan, cycle 1">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[15px] font-semibold text-stone-900">This week’s plan</h2>
+            <span className="text-[12px] text-stone-500">{completedWeekItems}/{GYM_WEEKLY_ITEMS.length}</span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {GYM_WEEKLY_ITEMS.map(item => (
+              <label key={item.id} className="flex min-h-11 items-center gap-2 rounded-xl border border-stone-200 px-2.5 py-2 cursor-pointer">
+                <input type="checkbox" checked={weekItems.includes(item.id)} onChange={() => toggleWeeklyItem(weekStart, item.id)} className="h-5 w-5 shrink-0 accent-[#1a4731]" />
+                <span className="min-w-0 text-[12px] font-medium leading-4 text-stone-900">{item.title}</span>
+              </label>
+            ))}
+          </div>
+          <div className="mt-3 space-y-2">
             <details className="rounded-xl border border-stone-200 px-3 py-2">
               <summary className="cursor-pointer text-[13px] font-medium text-stone-900">Glutes + legs · warm-up, lifts, core</summary>
               <div className="mt-2 space-y-2 text-[12px] text-stone-600">
@@ -215,7 +233,7 @@ export function GymPage() {
               )
             })}
           </div>
-          <p className="mt-4 text-[11px] text-stone-500">M Muscle · C Cardio · P Pilates. Older Full, Relax, Other, and Didn’t go entries stay unchanged.</p>
+          <p className="mt-4 text-[11px] text-stone-500">M Muscle · C Cardio · P Pilates · – Didn’t go. Older Full, Relax, and Other entries stay unchanged.</p>
         </section>
 
         <section className="bg-white rounded-2xl border border-stone-100 p-4 shadow-sm" aria-label="Gym year summary">
@@ -224,13 +242,14 @@ export function GymPage() {
           <div className="h-2 bg-stone-100 rounded-full mt-3 overflow-hidden" role="progressbar" aria-label="Gym days out of elapsed days" aria-valuemin={0} aria-valuemax={stats.elapsed || 1} aria-valuenow={stats.attended}>
             <div className="h-full bg-[#1e3a5f] rounded-full" style={{ width: `${attendancePercent}%` }} />
           </div>
-          <div className="grid grid-cols-3 gap-2 mt-4 text-center">
+          <div className="grid grid-cols-4 gap-2 mt-4 text-center">
             <div><p className="text-[20px] font-semibold text-[#b48a42]">{stats.cardio}</p><p className="text-[12px] text-stone-500">Cardio</p></div>
             <div><p className="text-[20px] font-semibold text-[#1a4731]">{stats.muscle}</p><p className="text-[12px] text-stone-500">Muscle</p></div>
             <div><p className="text-[20px] font-semibold text-[#1e3a5f]">{stats.pilates}</p><p className="text-[12px] text-stone-500">Pilates</p></div>
+            <div><p className="text-[20px] font-semibold text-stone-500">{stats.missed}</p><p className="text-[12px] text-stone-500">Didn’t go</p></div>
           </div>
-          {(stats.full + stats.relax + stats.other + stats.missed > 0) && <p className="mt-3 border-t border-stone-100 pt-3 text-[12px] text-stone-500">Earlier records: {stats.full} Full · {stats.relax} Relax · {stats.other} Other · {stats.missed} Didn’t go. Full, Relax, and Other count as gym days.</p>}
-          <p className="mt-2 text-[12px] text-stone-400">Unrecorded days stay separate from older Didn’t go entries.</p>
+          {(stats.full + stats.relax + stats.other > 0) && <p className="mt-3 border-t border-stone-100 pt-3 text-[12px] text-stone-500">Earlier records: {stats.full} Full · {stats.relax} Relax · {stats.other} Other. These count as gym days.</p>}
+          <p className="mt-2 text-[12px] text-stone-400">Unrecorded days stay separate from Didn’t go entries.</p>
         </section>
       </div>
       {exerciseFormOpen && (
