@@ -31,14 +31,18 @@ export const GYM_CYCLE_ONE = {
   lowerLifts: [
     'Hip thrust · 3 × 10–12',
     'Dumbbell RDL · 3 × 10–12',
+    'Seated leg press · 2 × 10–12',
     'Hip abduction · 3 × 12–15',
     'Seated leg curl · 2 × 12–15',
+    'Glute press · 2 × 10–12/side',
   ],
   upperLifts: [
     'Seated cable row · 3 × 10–12',
     'Lat pulldown · 3 × 10–12',
     'Reverse pec deck · 3 × 12–15',
+    'Lateral shoulder raise · 2 × 12–15',
     'Face pull · 2 × 12–15',
+    'Tricep pushdown · 2 × 10–12',
   ],
   core: ['Dead bug · 2 × 8/side', 'Side plank · 2 × 20 sec/side', 'Pallof press · 2 × 10/side'],
   upperCore: ['Dead bug · 1 × 8/side', 'Side plank · 1 × 20 sec/side', 'Pallof press · 1 × 10/side'],

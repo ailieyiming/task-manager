@@ -14,8 +14,9 @@ describe('first eight-week gym cycle', () => {
   it('has three lower-body, two upper-body, Pilates, and Cardio entries with a four-item goal', () => {
     expect(GYM_WEEKLY_ITEMS.map(item => item.id)).toEqual(['lower_a', 'lower_b', 'lower_c', 'upper_a', 'upper_b', 'pilates_a', 'cardio'])
     expect(GYM_WEEKLY_GOAL).toBe(4)
-    expect(GYM_CYCLE_ONE.lowerLifts).toHaveLength(4)
-    expect(GYM_CYCLE_ONE.upperLifts).toHaveLength(4)
+    expect(GYM_CYCLE_ONE.lowerLifts).toHaveLength(6)
+    expect(GYM_CYCLE_ONE.upperLifts).toHaveLength(6)
+    expect(GYM_CYCLE_ONE.upperLifts.some(item => item.startsWith('Tricep pushdown'))).toBe(true)
     expect(GYM_CYCLE_ONE.core).toHaveLength(3)
     expect(GYM_CYCLE_ONE.warmup).toEqual(['吊环 · 1分45秒', '拉伸肩胛骨 · 15下', '乌龙盘棍 · 15下', '侧拉腰 · 两边各10下'])
   })

@@ -187,7 +187,7 @@ export function GymPage() {
               <summary className="cursor-pointer text-[13px] font-medium text-stone-900">Glutes + legs · warm-up, lifts, core</summary>
               <div className="mt-2 space-y-2 text-[12px] text-stone-600">
                 <div><p className="font-semibold text-stone-700">Warm-up</p>{GYM_CYCLE_ONE.warmup.map(item => <p key={item}>{item}</p>)}</div>
-                <div><p className="font-semibold text-stone-700">Lifts · 35–40 min</p>{GYM_CYCLE_ONE.lowerLifts.map(item => <p key={item}>{item}</p>)}</div>
+                <div><p className="font-semibold text-stone-700">Lifts · 6 exercises</p>{GYM_CYCLE_ONE.lowerLifts.map(item => <p key={item}>{item}</p>)}</div>
                 <p>A: target sets above. B: first three lifts 2 sets each. C: all lifts 1–2 lighter sets.</p>
                 <div><p className="font-semibold text-stone-700">Core · 10–12 min</p>{GYM_CYCLE_ONE.core.map(item => <p key={item}>{item}</p>)}</div>
               </div>
@@ -196,7 +196,7 @@ export function GymPage() {
               <summary className="cursor-pointer text-[13px] font-medium text-stone-900">Back + shoulders · warm-up, lifts, core</summary>
               <div className="mt-2 space-y-2 text-[12px] text-stone-600">
                 <div><p className="font-semibold text-stone-700">Warm-up</p>{GYM_CYCLE_ONE.warmup.map(item => <p key={item}>{item}</p>)}</div>
-                <div><p className="font-semibold text-stone-700">Lifts · 35–40 min</p>{GYM_CYCLE_ONE.upperLifts.map(item => <p key={item}>{item}</p>)}</div>
+                <div><p className="font-semibold text-stone-700">Lifts · 6 exercises</p>{GYM_CYCLE_ONE.upperLifts.map(item => <p key={item}>{item}</p>)}</div>
                 <div><p className="font-semibold text-stone-700">Core · 1 set each</p>{GYM_CYCLE_ONE.upperCore.map(item => <p key={item}>{item}</p>)}</div>
               </div>
             </details>
